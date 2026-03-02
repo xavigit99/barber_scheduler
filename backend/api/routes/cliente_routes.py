@@ -5,6 +5,7 @@ from backend.infrastructure.database import SessionLocal
 from backend.application.commands.create_cliente_command import CreateClienteCommand
 from backend.application.handlers.create_cliente_handler import CreateClienteHandler
 from backend.infrastructure.schemas import ClienteCreate
+from meditor  import build_mediator
 
 router = APIRouter(prefix="/clientes", tags=["Clientes"])
 
@@ -18,7 +19,7 @@ def get_db():
 
 
 @router.post("/")
-def criar_cliente(data: ClienteCreate, db: Session = Depends(get_db)):
+async def create_client(data: ClienteCreate, db: Session = Depends(get_db)):
+    mediator = build_mediator(db)
     command = CreateClienteCommand(**data.model_dump())
-    handler = CreateClienteHandler(db)
-    return handler.handle(command)
+    return await mediator.send(command)
