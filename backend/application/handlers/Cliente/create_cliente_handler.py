@@ -1,16 +1,14 @@
-# Em backend/application/handlers/seu_arquivo.py
-
 from backend.core.client import Cliente
 from repositories.base_repository import BaseRepository
 from backend.application.commands.create_cliente_command import CreateClienteCommand
 from diator.requests import RequestHandler
-from sqlalchemy.orm import Session # Importe a Session
+from sqlalchemy.orm import Session 
 
 class CreateClienteHandler(RequestHandler[CreateClienteCommand, dict]):
    
     request_type = CreateClienteCommand 
 
-    def __init__(self, db: Session): # Tipar como Session ajuda o 'di'
+    def __init__(self, db: Session):
         self.repo = BaseRepository(Cliente, db)
 
     async def handle(self, command: CreateClienteCommand):

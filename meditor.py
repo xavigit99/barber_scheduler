@@ -1,4 +1,4 @@
-import pkgutil
+import os
 import importlib
 import inspect
 import di
@@ -10,43 +10,46 @@ from diator.requests import RequestHandler, RequestMap
 from di import bind_by_type
 from sqlalchemy.orm import Session
 
-import backend.application.handlers as handlers_package 
-
 def build_mediator(db: Session) -> Mediator:
     container = di.Container()
-    session_hook = bind_by_type(Dependent(lambda: db, scope="request"), Session)
-    container.bind(session_hook)
-
+    container.bind(bind_by_type(Dependent(lambda: db, scope="request"), Session))
     request_map = RequestMap()
+    
+    current_path = os.path.abspath(__file__)
+    project_root = os.path.dirname(current_path)
+    
+    for _ in range(5):
+        if os.path.exists(os.path.join(project_root, "backend")):
+            break
+        project_root = os.path.dirname(project_root)
 
-    for loader, module_name, is_pkg in pkgutil.walk_packages(
-        handlers_package.__path__, 
-        handlers_package.__name__ + "."
-    ):
-        module = importlib.import_module(module_name)
-        
-        for name, obj in inspect.getmembers(module, inspect.isclass):
+    application_dir = os.path.join(project_root, "backend", "application")
 
-            if hasattr(obj, "handle") and obj is not RequestHandler:
+    if not os.path.exists(application_dir):
+        return Mediator(request_map=request_map, container=DIContainer())
+
+    for root, _, files in os.walk(application_dir):
+        for file in files:
+            if file.endswith(".py") and file != "__init__.py":
+                rel_path = os.path.relpath(os.path.join(root, file), project_root)
+                module_name = rel_path.replace(os.sep, ".").removesuffix(".py")
                 
+                try:
+                    module = importlib.import_module(module_name)
+                    for name, obj in inspect.getmembers(module, inspect.isclass):
 
-                handler_hook = bind_by_type(Dependent(obj, scope="request"), obj)
-                container.bind(handler_hook)
-
-                for base in getattr(obj, "__orig_bases__", []):
-                    origin = getattr(base, "__origin__", None)
-
-                    if origin and getattr(origin, "__name__", "") == "RequestHandler":
-                        args = get_args(base)
-                        if args:
-                            command_type = args[0]
-                            request_map.bind(command_type, obj)
-
-
-    di_container = DIContainer() 
+                        if hasattr(obj, "handle") and name != "RequestHandler":
+                            
+                            container.bind(bind_by_type(Dependent(obj, scope="request"), obj))
+                            
+                            for base in getattr(obj, "__orig_bases__", []):
+                                args = get_args(base)
+                                if args:
+                                    request_type = args[0]
+                                    request_map.bind(request_type, obj)
+                except Exception:
+                    continue
+                    
+    di_container = DIContainer()
     di_container.attach_external_container(container)
-
-    return Mediator(
-        request_map=request_map, 
-        container=di_container
-    )
+    return Mediator(request_map=request_map, container=di_container)
