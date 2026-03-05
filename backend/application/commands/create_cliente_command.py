@@ -1,5 +1,9 @@
-class CreateClienteCommand:
-    def __init__(self, nome: str, email: str, telefone: str | None = None):
-        self.nome = nome
-        self.email = email
-        self.telefone = telefone
+from dataclasses import dataclass
+from diator.requests import Request
+
+
+@dataclass(frozen=True)
+class CreateClienteCommand(Request):
+    nome: str
+    email: str
+    telefone: str | None = None
