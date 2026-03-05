@@ -5,9 +5,7 @@ from diator.requests import RequestHandler
 from sqlalchemy.orm import Session 
 
 class CreateClienteHandler(RequestHandler[CreateClienteCommand, dict]):
-   
-    request_type = CreateClienteCommand 
-
+    
     def __init__(self, db: Session):
         self.repo = BaseRepository(Cliente, db)
 
