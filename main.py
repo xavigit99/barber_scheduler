@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from backend.infrastructure.database import engine, Base
-from backend.api.routes.create_client import router as cliente_router
+from backend.api.routes.client_routes import router as client_router
 from backend.api.routes.get_client import router as clinte_router_get
 
 Base.metadata.create_all(bind=engine)

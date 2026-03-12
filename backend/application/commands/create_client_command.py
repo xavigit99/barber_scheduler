@@ -1,9 +1,10 @@
 from dataclasses import dataclass
+
 from diator.requests import Request
 
 
 @dataclass(frozen=True)
-class CreateClienteCommand(Request):
-    nome: str
+class CreateClientCommand(Request):
+    name: str
     email: str
-    telefone: str | None = None
+    phone: str | None = None
