@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
-from backend.api.routes.client_route_adapters import (
+from backend.api.client_http import (
     build_create_client_command,
     build_delete_client_command,
     build_get_client_query,

@@ -5,7 +5,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
 from fastapi import HTTPException
 
-from backend.api.routes.client_route_adapters import (
+from backend.api.client_http import (
     build_create_client_command,
     build_delete_client_command,
     build_get_client_query,
@@ -18,7 +18,7 @@ from backend.api.routes.client_route_adapters import (
 from backend.infrastructure.schemas import ClientCreate, ClientUpdate
 
 
-class ClientRouteAdaptersTestCase(unittest.TestCase):
+class ClientHttpTestCase(unittest.TestCase):
 
     def test_build_create_client_command_maps_payload_fields(self):
         command = build_create_client_command(
