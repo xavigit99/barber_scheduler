@@ -8,6 +8,7 @@ from fastapi import HTTPException, Response
 
 from backend.api.routes.client_routes import (
     create_client,
+    list_clients,
     delete_client,
     get_client,
     replace_client,
@@ -57,6 +58,31 @@ class ClientRoutesTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(context.exception.detail, "Client not found")
         self.assertEqual(mediator.requests[0].client_id, 7)
 
+    async def test_get_client_returns_payload_when_found(self):
+        mediator = FakeMediator(
+            {"id": 7, "nome": "John", "email": "john@example.com", "telefone": "123"}
+        )
+
+        with patch("backend.api.routes.client_routes.build_mediator", return_value=mediator):
+            result = await get_client(7, db=object())
+
+        self.assertEqual(result["id"], 7)
+        self.assertEqual(mediator.requests[0].client_id, 7)
+
+    async def test_list_clients_returns_payload(self):
+        mediator = FakeMediator(
+            [
+                {"id": 1, "nome": "John", "email": "john@example.com", "telefone": "123"},
+                {"id": 2, "nome": "Jane", "email": "jane@example.com", "telefone": None},
+            ]
+        )
+
+        with patch("backend.api.routes.client_routes.build_mediator", return_value=mediator):
+            result = await list_clients(db=object())
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(mediator.requests[0].__class__.__name__, "ListClientsQuery")
+
     async def test_update_client_requires_at_least_one_field(self):
         with patch("backend.api.routes.client_routes.build_mediator") as build_mediator:
             with self.assertRaises(HTTPException) as context:
@@ -65,6 +91,24 @@ class ClientRoutesTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(context.exception.status_code, 400)
         self.assertEqual(context.exception.detail, "At least one field must be provided")
         build_mediator.assert_not_called()
+
+    async def test_update_client_maps_partial_payload_to_command(self):
+        mediator = FakeMediator(
+            {"id": 7, "nome": "John", "email": "john@example.com", "telefone": "123"}
+        )
+
+        with patch("backend.api.routes.client_routes.build_mediator", return_value=mediator):
+            result = await update_client(
+                7,
+                ClientUpdate(email="john@example.com"),
+                db=object(),
+            )
+
+        self.assertEqual(result["id"], 7)
+        self.assertEqual(mediator.requests[0].client_id, 7)
+        self.assertIsNone(mediator.requests[0].name)
+        self.assertEqual(mediator.requests[0].email, "john@example.com")
+        self.assertIsNone(mediator.requests[0].phone)
 
     async def test_replace_client_maps_payload_to_update_command(self):
         mediator = FakeMediator(
@@ -83,6 +127,21 @@ class ClientRoutesTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(mediator.requests[0].name, "John")
         self.assertEqual(mediator.requests[0].email, "john@example.com")
         self.assertEqual(mediator.requests[0].phone, "123")
+
+    async def test_replace_client_raises_not_found_when_missing(self):
+        mediator = FakeMediator(None)
+
+        with patch("backend.api.routes.client_routes.build_mediator", return_value=mediator):
+            with self.assertRaises(HTTPException) as context:
+                await replace_client(
+                    7,
+                    ClientCreate(nome="John", email="john@example.com", telefone="123"),
+                    db=object(),
+                )
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertEqual(context.exception.detail, "Client not found")
+        self.assertEqual(mediator.requests[0].client_id, 7)
 
     async def test_delete_client_returns_no_content_response(self):
         mediator = FakeMediator(True)
