@@ -89,6 +89,7 @@
 - Criar migration inicial a partir dos modelos SQLAlchemy atuais
 - Documentar `alembic upgrade head` no README e Makefile (`make migrate`)
 
+
 #### BL-031: CI/CD Hardening
 - Adicionar Alembic migration check ao pipeline CI
 - Adicionar lint (ruff ou flake8) ao pipeline
@@ -213,3 +214,4 @@
 | `repositories/base_repository.py` | Soft-delete + tenant filtering automático |
 | `backend/application/handlers/appointment/` | Lógica core de appointments |
 | `backend/core/scheduling.py` | Cálculo de slots (timezone-aware, 15min) |
+
