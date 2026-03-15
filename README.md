@@ -20,3 +20,13 @@ Build and start the containers:
 This will start:
     PostgreSQL database
     FastAPI application
+
+# Database Migrations
+
+This project uses Alembic for schema migrations.
+
+Apply all pending migrations:
+    make migrate
+
+Create a new migration after changing models:
+    make migrate-create msg="describe your change"
