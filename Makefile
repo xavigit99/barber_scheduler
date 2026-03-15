@@ -1,7 +1,7 @@
 PYTHON ?= python
 PIP := $(PYTHON) -m pip
 
-.PHONY: clean install test run
+.PHONY: clean install test run migrate migrate-create
 
 clean:
 	find . -type d -name "__pycache__" -prune -exec rm -rf {} +
@@ -15,3 +15,9 @@ test:
 
 run:
 	$(PYTHON) -m uvicorn app:app --reload
+
+migrate:
+	alembic upgrade head
+
+migrate-create:
+	alembic revision --autogenerate -m "$(msg)"
