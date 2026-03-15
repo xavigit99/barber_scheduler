@@ -1,5 +1,6 @@
 import backend.core
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from backend.api.routes.appointment_routes import router as appointment_router
 from backend.api.routes.auth_routes import router as auth_router
 from backend.api.routes.availability_routes import router as availability_router
@@ -13,6 +14,14 @@ from backend.infrastructure.database import Base, engine
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Barber Scheduler API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(health_router)
 app.include_router(auth_router)

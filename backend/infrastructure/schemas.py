@@ -205,6 +205,12 @@ class UserCreateRequest(UserBase):
     password: str = Field(min_length=8)
 
 
+class ClientRegisterRequest(BaseModel):
+    username: str
+    email: str
+    password: str = Field(min_length=8)
+
+
 class BootstrapAdminRequest(BaseModel):
     username: str
     email: str
