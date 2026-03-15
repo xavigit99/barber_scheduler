@@ -2,10 +2,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './components/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import Spinner from './components/Spinner';
 
 /* Pages */
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/admin/DashboardPage';
 import BarbershopsPage from './pages/admin/BarbershopsPage';
 import BarbersPage from './pages/admin/BarbersPage';
@@ -30,11 +32,13 @@ function RootRedirect() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ErrorBoundary>
       <ToastProvider>
         <AuthProvider>
           <Routes>
             {/* Public */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
 
             {/* Root */}
             <Route path="/" element={<RootRedirect />} />
@@ -67,6 +71,7 @@ export default function App() {
           </Routes>
         </AuthProvider>
       </ToastProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

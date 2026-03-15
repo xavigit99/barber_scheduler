@@ -49,7 +49,7 @@ export default function Navbar() {
       {/* tenant badge */}
       {tenantId && (
         <div className="px-5 py-2 text-xs text-slate-500 truncate border-b border-slate-800">
-          Tenant: {tenantId.slice(0, 8)}...
+          Tenant: {String(tenantId).slice(0, 8)}...
         </div>
       )}
 

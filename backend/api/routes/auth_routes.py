@@ -6,6 +6,7 @@ from backend.api.auth_http import (
     build_authenticate_user_command,
     build_bootstrap_admin_command,
     build_create_user_command,
+    build_register_client_command,
 )
 from backend.core.exceptions import AuthenticationError, ConflictError
 from backend.core.roles import ADMIN_ROLE
@@ -14,6 +15,7 @@ from backend.infrastructure.schemas import (
     AuthLoginRequest,
     AuthTokenResponse,
     BootstrapAdminRequest,
+    ClientRegisterRequest,
     UserCreateRequest,
     UserResponse,
 )
@@ -46,6 +48,18 @@ async def login(payload: AuthLoginRequest, db: Session = Depends(get_db)):
     except AuthenticationError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def register_client(payload: ClientRegisterRequest, db: Session = Depends(get_db)):
+    mediator = build_mediator(db)
+    try:
+        return await mediator.send(build_register_client_command(payload))
+    except ConflictError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
         ) from exc
 
