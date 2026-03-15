@@ -39,20 +39,22 @@ class ClientRoutesTestCase(unittest.IsolatedAsyncioTestCase):
 
         with patch("backend.api.routes.client_routes.build_mediator", return_value=mediator):
             result = await create_client(
-                ClientCreate(nome="John", email="john@example.com", telefone="123"),
+                ClientCreate(nome="John", email="john@example.com", telefone="123", tenant_id=5),
                 db=object(),
+                tenant_id=5,
             )
 
         self.assertEqual(result["email"], "john@example.com")
         self.assertEqual(mediator.requests[0].name, "John")
         self.assertEqual(mediator.requests[0].phone, "123")
+        self.assertEqual(mediator.requests[0].tenant_id, 5)
 
     async def test_get_client_raises_not_found_when_missing(self):
         mediator = FakeMediator(None)
 
         with patch("backend.api.routes.client_routes.build_mediator", return_value=mediator):
             with self.assertRaises(HTTPException) as context:
-                await get_client(7, db=object())
+                await get_client(7, db=object(), tenant_id=5)
 
         self.assertEqual(context.exception.status_code, 404)
         self.assertEqual(context.exception.detail, "Client not found")
@@ -64,10 +66,11 @@ class ClientRoutesTestCase(unittest.IsolatedAsyncioTestCase):
         )
 
         with patch("backend.api.routes.client_routes.build_mediator", return_value=mediator):
-            result = await get_client(7, db=object())
+            result = await get_client(7, db=object(), tenant_id=5)
 
         self.assertEqual(result["id"], 7)
         self.assertEqual(mediator.requests[0].client_id, 7)
+        self.assertEqual(mediator.requests[0].tenant_id, 5)
 
     async def test_list_clients_returns_payload(self):
         mediator = FakeMediator(
@@ -78,15 +81,16 @@ class ClientRoutesTestCase(unittest.IsolatedAsyncioTestCase):
         )
 
         with patch("backend.api.routes.client_routes.build_mediator", return_value=mediator):
-            result = await list_clients(db=object())
+            result = await list_clients(db=object(), tenant_id=5)
 
         self.assertEqual(len(result), 2)
         self.assertEqual(mediator.requests[0].__class__.__name__, "ListClientsQuery")
+        self.assertEqual(mediator.requests[0].tenant_id, 5)
 
     async def test_update_client_requires_at_least_one_field(self):
         with patch("backend.api.routes.client_routes.build_mediator") as build_mediator:
             with self.assertRaises(HTTPException) as context:
-                await update_client(7, ClientUpdate(), db=object())
+                await update_client(7, ClientUpdate(), db=object(), tenant_id=5)
 
         self.assertEqual(context.exception.status_code, 400)
         self.assertEqual(context.exception.detail, "At least one field must be provided")
@@ -102,6 +106,7 @@ class ClientRoutesTestCase(unittest.IsolatedAsyncioTestCase):
                 7,
                 ClientUpdate(email="john@example.com"),
                 db=object(),
+                tenant_id=5,
             )
 
         self.assertEqual(result["id"], 7)
@@ -109,6 +114,7 @@ class ClientRoutesTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(mediator.requests[0].name)
         self.assertEqual(mediator.requests[0].email, "john@example.com")
         self.assertIsNone(mediator.requests[0].phone)
+        self.assertEqual(mediator.requests[0].tenant_id, 5)
 
     async def test_replace_client_maps_payload_to_update_command(self):
         mediator = FakeMediator(
@@ -118,8 +124,9 @@ class ClientRoutesTestCase(unittest.IsolatedAsyncioTestCase):
         with patch("backend.api.routes.client_routes.build_mediator", return_value=mediator):
             result = await replace_client(
                 7,
-                ClientCreate(nome="John", email="john@example.com", telefone="123"),
+                ClientCreate(nome="John", email="john@example.com", telefone="123", tenant_id=5),
                 db=object(),
+                tenant_id=5,
             )
 
         self.assertEqual(result["id"], 7)
@@ -127,6 +134,7 @@ class ClientRoutesTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(mediator.requests[0].name, "John")
         self.assertEqual(mediator.requests[0].email, "john@example.com")
         self.assertEqual(mediator.requests[0].phone, "123")
+        self.assertEqual(mediator.requests[0].tenant_id, 5)
 
     async def test_replace_client_raises_not_found_when_missing(self):
         mediator = FakeMediator(None)
@@ -135,19 +143,21 @@ class ClientRoutesTestCase(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(HTTPException) as context:
                 await replace_client(
                     7,
-                    ClientCreate(nome="John", email="john@example.com", telefone="123"),
-                    db=object(),
-                )
+                ClientCreate(nome="John", email="john@example.com", telefone="123", tenant_id=5),
+                db=object(),
+                tenant_id=5,
+            )
 
         self.assertEqual(context.exception.status_code, 404)
         self.assertEqual(context.exception.detail, "Client not found")
         self.assertEqual(mediator.requests[0].client_id, 7)
+        self.assertEqual(mediator.requests[0].tenant_id, 5)
 
     async def test_delete_client_returns_no_content_response(self):
         mediator = FakeMediator(True)
 
         with patch("backend.api.routes.client_routes.build_mediator", return_value=mediator):
-            response = await delete_client(4, db=object())
+            response = await delete_client(4, db=object(), tenant_id=5)
 
         self.assertIsInstance(response, Response)
         self.assertEqual(response.status_code, 204)
@@ -158,11 +168,12 @@ class ClientRoutesTestCase(unittest.IsolatedAsyncioTestCase):
 
         with patch("backend.api.routes.client_routes.build_mediator", return_value=mediator):
             with self.assertRaises(HTTPException) as context:
-                await delete_client(4, db=object())
+                await delete_client(4, db=object(), tenant_id=5)
 
         self.assertEqual(context.exception.status_code, 404)
         self.assertEqual(context.exception.detail, "Client not found")
         self.assertEqual(mediator.requests[0].client_id, 4)
+        self.assertEqual(mediator.requests[0].tenant_id, 5)
 
 
 if __name__ == "__main__":

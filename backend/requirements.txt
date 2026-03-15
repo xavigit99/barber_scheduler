@@ -1,0 +1,8 @@
+fastapi==0.135.1
+sqlalchemy==2.0.47
+pydantic==2.12.5
+python-dotenv==1.2.2
+uvicorn==0.41.0
+diator==0.1.2
+di==0.79.2
+psycopg2-binary==2.9.11

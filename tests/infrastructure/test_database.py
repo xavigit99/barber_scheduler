@@ -21,6 +21,16 @@ class DatabaseConfigTestCase(unittest.TestCase):
         with patch.dict(os.environ, {"databse_url": "sqlite:///legacy.db"}, clear=True):
             self.assertEqual(get_database_url(), "sqlite:///legacy.db")
 
+    def test_get_database_url_raises_when_missing(self):
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(RuntimeError) as context:
+                get_database_url()
+
+        self.assertEqual(
+            str(context.exception),
+            "DATABASE_URL environment variable is required",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

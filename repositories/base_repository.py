@@ -6,15 +6,27 @@ T = TypeVar("T")
 
 class BaseRepository(Generic[T]):
 
-    def __init__(self, model: Type[T], db: Session):
+    def __init__(self, model: Type[T], db: Session, tenant_id: int | None = None):
         self.model = model
         self.db = db
+        self.tenant_id = tenant_id
+
+    def _query(self):
+        query = self.db.query(self.model)
+        if (
+            self.tenant_id is not None
+            and hasattr(self.model, "tenant_id")
+        ):
+            query = query.filter(self.model.tenant_id == self.tenant_id)
+        if hasattr(self.model, "deleted"):
+            query = query.filter(self.model.deleted.is_(False))
+        return query
 
     def get(self, id: int) -> Optional[T]:
-        return self.db.query(self.model).filter(self.model.id == id).first()
+        return self._query().filter(self.model.id == id).first()
 
     def list(self) -> List[T]:
-        return self.db.query(self.model).all()
+        return self._query().all()
 
     def create(self, obj_data: dict) -> T:
         obj = self.model(**obj_data)
@@ -39,6 +51,11 @@ class BaseRepository(Generic[T]):
         obj = self.get(id)
         if not obj:
             return False
+
+        if hasattr(obj, "deleted"):
+            setattr(obj, "deleted", True)
+            self.db.commit()
+            return True
 
         self.db.delete(obj)
         self.db.commit()

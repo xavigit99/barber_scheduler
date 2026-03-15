@@ -1,0 +1,9 @@
+ADMIN_ROLE = "admin"
+BARBER_ROLE = "barber"
+CLIENT_ROLE = "client"
+
+ALLOWED_ROLES = {
+    ADMIN_ROLE,
+    BARBER_ROLE,
+    CLIENT_ROLE,
+}

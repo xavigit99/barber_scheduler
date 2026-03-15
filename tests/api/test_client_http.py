@@ -22,38 +22,45 @@ class ClientHttpTestCase(unittest.TestCase):
 
     def test_build_create_client_command_maps_payload_fields(self):
         command = build_create_client_command(
-            ClientCreate(nome="John", email="john@example.com", telefone="123")
+            ClientCreate(nome="John", email="john@example.com", telefone="123", tenant_id=5),
+            tenant_id=5,
         )
 
         self.assertEqual(command.name, "John")
         self.assertEqual(command.email, "john@example.com")
         self.assertEqual(command.phone, "123")
+        self.assertEqual(command.tenant_id, 5)
 
     def test_build_update_client_command_maps_partial_payload_fields(self):
         command = build_update_client_command(
             7,
             ClientUpdate(email="john@example.com"),
+            tenant_id=5,
         )
 
         self.assertEqual(command.client_id, 7)
         self.assertIsNone(command.name)
         self.assertEqual(command.email, "john@example.com")
         self.assertIsNone(command.phone)
+        self.assertEqual(command.tenant_id, 5)
 
     def test_build_get_client_query_maps_client_id(self):
-        query = build_get_client_query(9)
+        query = build_get_client_query(9, tenant_id=5)
 
         self.assertEqual(query.client_id, 9)
+        self.assertEqual(query.tenant_id, 5)
 
     def test_build_delete_client_command_maps_client_id(self):
-        command = build_delete_client_command(11)
+        command = build_delete_client_command(11, tenant_id=5)
 
         self.assertEqual(command.client_id, 11)
+        self.assertEqual(command.tenant_id, 5)
 
     def test_build_list_clients_query_returns_query_instance(self):
-        query = build_list_clients_query()
+        query = build_list_clients_query(tenant_id=5)
 
         self.assertEqual(query.__class__.__name__, "ListClientsQuery")
+        self.assertEqual(query.tenant_id, 5)
 
     def test_ensure_client_found_raises_not_found_for_missing_client(self):
         with self.assertRaises(HTTPException) as context:

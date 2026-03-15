@@ -6,3 +6,4 @@ from diator.requests import Request
 @dataclass(frozen=True)
 class DeleteClientCommand(Request):
     client_id: int
+    tenant_id: int

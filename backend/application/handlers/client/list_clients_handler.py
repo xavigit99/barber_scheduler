@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from backend.application.queries.list_clients_query import ListClientsQuery
-from backend.core.client import Cliente
+from backend.core.client import Client
 from diator.requests import RequestHandler
 from repositories.base_repository import BaseRepository
 
@@ -9,7 +9,8 @@ from repositories.base_repository import BaseRepository
 class ListClientsHandler(RequestHandler[ListClientsQuery, list]):
 
     def __init__(self, db: Session):
-        self.repository = BaseRepository(Cliente, db)
+        self.db = db
 
     async def handle(self, query: ListClientsQuery) -> list:
-        return self.repository.list()
+        repository = BaseRepository(Client, self.db, tenant_id=query.tenant_id)
+        return repository.list()

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from backend.application.commands.update_client_command import UpdateClientCommand
-from backend.core.client import Cliente
+from backend.core.client import Client
 from diator.requests import RequestHandler
 from repositories.base_repository import BaseRepository
 
@@ -9,7 +9,7 @@ from repositories.base_repository import BaseRepository
 class UpdateClientHandler(RequestHandler[UpdateClientCommand, object | None]):
 
     def __init__(self, db: Session):
-        self.repository = BaseRepository(Cliente, db)
+        self.db = db
 
     async def handle(self, command: UpdateClientCommand):
         update_data = {}
@@ -20,5 +20,8 @@ class UpdateClientHandler(RequestHandler[UpdateClientCommand, object | None]):
             update_data["email"] = command.email
         if command.phone is not None:
             update_data["telefone"] = command.phone
+        if command.tenant_id is not None:
+            update_data["tenant_id"] = command.tenant_id
 
-        return self.repository.update(command.client_id, update_data)
+        repository = BaseRepository(Client, self.db, tenant_id=command.tenant_id)
+        return repository.update(command.client_id, update_data)

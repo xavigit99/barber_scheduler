@@ -6,7 +6,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
 from backend.application.commands.update_client_command import UpdateClientCommand
 from backend.application.handlers.client.update_client_handler import UpdateClientHandler
-from backend.core.client import Cliente
+from backend.core.client import Client
 
 
 class UpdateClientHandlerTestCase(unittest.IsolatedAsyncioTestCase):
@@ -29,12 +29,13 @@ class UpdateClientHandlerTestCase(unittest.IsolatedAsyncioTestCase):
             name="John",
             email="john@example.com",
             phone="123",
+            tenant_id=5,
         )
 
         result = await handler.handle(command)
 
         self.assertIs(result, repository_refresh_target)
-        db.query.assert_called_with(Cliente)
+        db.query.assert_called_with(Client)
         db.commit.assert_called_once_with()
         db.refresh.assert_called_once_with(repository_refresh_target)
         self.assertEqual(repository_refresh_target.nome, "John")

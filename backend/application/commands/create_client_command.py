@@ -7,4 +7,5 @@ from diator.requests import Request
 class CreateClientCommand(Request):
     name: str
     email: str
+    tenant_id: int
     phone: str | None = None

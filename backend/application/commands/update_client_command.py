@@ -9,3 +9,4 @@ class UpdateClientCommand(Request):
     name: str | None = None
     email: str | None = None
     phone: str | None = None
+    tenant_id: int | None = None

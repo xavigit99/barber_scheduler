@@ -5,4 +5,4 @@ from diator.requests import Request
 
 @dataclass(frozen=True)
 class ListClientsQuery(Request):
-    pass
+    tenant_id: int
