@@ -18,13 +18,7 @@ jobs:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          TEXT="🔔 <b>Novo PR aberto</b>
-
-📌 ${TITLE}
-👤 Por: ${AUTHOR}
-🌿 ${HEAD} → ${BASE}
-🔗 ${URL}"
-
+          TEXT="$(printf '🔔 <b>Novo PR aberto</b>\n\n📌 %s\n👤 Por: %s\n🌿 %s → %s\n🔗 %s' "$TITLE" "$AUTHOR" "$HEAD" "$BASE" "$URL")"
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             -d chat_id="${CHAT_ID}" \
             -d parse_mode="HTML" \
