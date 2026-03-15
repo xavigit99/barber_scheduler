@@ -6,11 +6,19 @@ from backend.api.routes.availability_routes import router as availability_router
 from backend.api.routes.barbershop_routes import router as barbershop_router
 from backend.api.routes.barber_routes import router as barber_router
 from backend.api.routes.client_routes import router as client_router
-from backend.api.routes.get_client import router as clinte_router_get
+from backend.api.routes.service_routes import router as service_router
+from backend.api.routes.health_routes import router as health_router
+from backend.infrastructure.database import Base, engine
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(title="Barber Scheduler API")
 
-app.include_router(cliente_router)
-app.include_router(clinte_router_get)
+app.include_router(health_router)
+app.include_router(auth_router)
+app.include_router(barbershop_router)
+app.include_router(barber_router)
+app.include_router(client_router)
+app.include_router(service_router)
+app.include_router(availability_router)
+app.include_router(appointment_router)

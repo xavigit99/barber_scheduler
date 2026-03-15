@@ -10,6 +10,7 @@ class Appointment(Base):
     barber_id = Column(Integer, ForeignKey("barbeiros.id"), nullable=False, index=True)
     client_id = Column(Integer, ForeignKey("clientes.id"), nullable=False, index=True)
     service_id = Column(Integer, ForeignKey("servicos.id"), nullable=False, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=True, index=True)
     start_at = Column(DateTime, nullable=False, index=True)
     end_at = Column(DateTime, nullable=False, index=True)
     created_at = Column(DateTime, nullable=False)

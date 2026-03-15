@@ -16,10 +16,10 @@ class ListBarberAppointmentsHandler(
 
     def __init__(self, db: Session):
         self.db = db
-        self.barber_repository = BaseRepository(Barber, db)
 
     async def handle(self, query: ListBarberAppointmentsQuery) -> list:
-        if self.barber_repository.get(query.barber_id) is None:
+        barber_repository = BaseRepository(Barber, self.db, query.tenant_id)
+        if barber_repository.get(query.barber_id) is None:
             raise NotFoundError("Barber not found")
 
         return (

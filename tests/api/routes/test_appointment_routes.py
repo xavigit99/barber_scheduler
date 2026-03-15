@@ -2,7 +2,7 @@ import os
 import unittest
 from datetime import datetime, timedelta
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
@@ -16,9 +16,10 @@ from backend.api.routes.appointment_routes import (
     list_barber_appointments,
     list_my_appointments,
     reschedule_appointment,
+    _authorize_user_for_appointment,
 )
 from backend.core.exceptions import ConflictError, NotFoundError, ValidationError
-from backend.core.roles import ADMIN_ROLE
+from backend.core.roles import ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE
 from backend.infrastructure.schemas import (
     AppointmentCreateRequest,
     AppointmentRescheduleRequest,
@@ -46,6 +47,14 @@ class FakeMediator:
 
 def _admin_user():
     return SimpleNamespace(id=1, role=ADMIN_ROLE)
+
+
+def _barber_user(user_id=2):
+    return SimpleNamespace(id=user_id, role=BARBER_ROLE)
+
+
+def _client_user(user_id=4):
+    return SimpleNamespace(id=user_id, role=CLIENT_ROLE)
 
 
 class AppointmentRoutesTestCase(unittest.IsolatedAsyncioTestCase):
@@ -102,7 +111,7 @@ class AppointmentRoutesTestCase(unittest.IsolatedAsyncioTestCase):
                 await reschedule_appointment(
                     2,
                     payload,
-                    db=object(),
+                    db=MagicMock(),
                     current_user=_admin_user(),
                 )
 
@@ -117,7 +126,7 @@ class AppointmentRoutesTestCase(unittest.IsolatedAsyncioTestCase):
         ):
             response = await cancel_appointment(
                 3,
-                db=object(),
+                db=MagicMock(),
                 current_user=_admin_user(),
             )
 
@@ -134,7 +143,7 @@ class AppointmentRoutesTestCase(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(HTTPException) as context:
                 await cancel_appointment(
                     3,
-                    db=object(),
+                    db=MagicMock(),
                     current_user=_admin_user(),
                 )
 
@@ -163,18 +172,80 @@ class AppointmentRoutesTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(result), 1)
 
-    async def test_list_my_appointments_requires_client_role(self):
+    async def test_list_barber_appointments_barber_can_view_own(self):
+        db = MagicMock()
+        barber_query = MagicMock()
+        barber = SimpleNamespace(id=3, user_id=2)
+        db.query.return_value = barber_query
+        barber_query.filter.return_value = barber_query
+        barber_query.first.return_value = barber
+        mediator = FakeMediator([{"id": 1}])
+
+        with patch(
+            "backend.api.routes.appointment_routes.build_mediator", return_value=mediator
+        ):
+            result = await list_barber_appointments(
+                3, db=db, current_user=_barber_user(user_id=2)
+            )
+
+        self.assertEqual(len(result), 1)
+
+    async def test_list_barber_appointments_barber_blocked_from_other(self):
+        db = MagicMock()
+        barber_query = MagicMock()
+        db.query.return_value = barber_query
+        barber_query.filter.return_value = barber_query
+        barber_query.first.return_value = None  # barber not linked to this user
+        mediator = FakeMediator([{"id": 1}])
+
+        with patch(
+            "backend.api.routes.appointment_routes.build_mediator", return_value=mediator
+        ):
+            with self.assertRaises(HTTPException) as context:
+                await list_barber_appointments(
+                    3, db=db, current_user=_barber_user(user_id=99)
+                )
+
+        self.assertEqual(context.exception.status_code, 403)
+
+    async def test_list_my_appointments_returns_client_appointments(self):
+        db = MagicMock()
+        client_query = MagicMock()
+        client = SimpleNamespace(id=4)
+        db.query.return_value = client_query
+        client_query.filter.return_value = client_query
+        client_query.first.return_value = client
+
         mediator = FakeMediator([{"id": 1}])
 
         with patch(
             "backend.api.routes.appointment_routes.build_mediator", return_value=mediator
         ):
             result = await list_my_appointments(
-                db=object(),
-                current_user=type("User", (), {"id": 4, "role": "client"})(),
+                db=db,
+                current_user=_client_user(user_id=4),
             )
 
         self.assertEqual(len(result), 1)
+
+    async def test_list_my_appointments_returns_empty_when_no_client(self):
+        db = MagicMock()
+        client_query = MagicMock()
+        db.query.return_value = client_query
+        client_query.filter.return_value = client_query
+        client_query.first.return_value = None
+
+        mediator = FakeMediator([])
+
+        with patch(
+            "backend.api.routes.appointment_routes.build_mediator", return_value=mediator
+        ):
+            result = await list_my_appointments(
+                db=db,
+                current_user=_client_user(user_id=99),
+            )
+
+        self.assertEqual(result, [])
 
     async def test_create_appointment_blocks_client_if_mismatch(self):
         mediator = FakeMediator({"id": 1})
@@ -192,7 +263,7 @@ class AppointmentRoutesTestCase(unittest.IsolatedAsyncioTestCase):
                 await create_appointment(
                     payload,
                     db=object(),
-                    current_user=type("User", (), {"id": 4, "role": "client"})(),
+                    current_user=_client_user(user_id=4),
                 )
 
         self.assertEqual(context.exception.status_code, 403)
@@ -205,3 +276,58 @@ class AppointmentRoutesTestCase(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(HTTPException):
                 await get_appointment(5, db=object())
+
+    async def test_authorize_admin_always_passes(self):
+        db = MagicMock()
+        appointment = SimpleNamespace(barber_id=1, client_id=2)
+        # Should not raise
+        _authorize_user_for_appointment(_admin_user(), appointment, db)
+        db.query.assert_not_called()
+
+    async def test_authorize_barber_with_matching_user_id(self):
+        db = MagicMock()
+        barber_query = MagicMock()
+        db.query.return_value = barber_query
+        barber_query.filter.return_value = barber_query
+        barber_query.first.return_value = SimpleNamespace(id=3)
+
+        appointment = SimpleNamespace(barber_id=3, client_id=2)
+        # Should not raise
+        _authorize_user_for_appointment(_barber_user(user_id=2), appointment, db)
+
+    async def test_authorize_barber_without_matching_raises_403(self):
+        db = MagicMock()
+        barber_query = MagicMock()
+        db.query.return_value = barber_query
+        barber_query.filter.return_value = barber_query
+        barber_query.first.return_value = None
+
+        appointment = SimpleNamespace(barber_id=3, client_id=2)
+        with self.assertRaises(HTTPException) as context:
+            _authorize_user_for_appointment(_barber_user(user_id=99), appointment, db)
+
+        self.assertEqual(context.exception.status_code, 403)
+
+    async def test_authorize_client_with_matching_user_id(self):
+        db = MagicMock()
+        client_query = MagicMock()
+        db.query.return_value = client_query
+        client_query.filter.return_value = client_query
+        client_query.first.return_value = SimpleNamespace(id=2)
+
+        appointment = SimpleNamespace(barber_id=3, client_id=2)
+        # Should not raise
+        _authorize_user_for_appointment(_client_user(user_id=4), appointment, db)
+
+    async def test_authorize_client_without_matching_raises_403(self):
+        db = MagicMock()
+        client_query = MagicMock()
+        db.query.return_value = client_query
+        client_query.filter.return_value = client_query
+        client_query.first.return_value = None
+
+        appointment = SimpleNamespace(barber_id=3, client_id=2)
+        with self.assertRaises(HTTPException) as context:
+            _authorize_user_for_appointment(_client_user(user_id=99), appointment, db)
+
+        self.assertEqual(context.exception.status_code, 403)

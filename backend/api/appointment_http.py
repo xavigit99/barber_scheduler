@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Optional
 
 from backend.application.commands.cancel_appointment_command import CancelAppointmentCommand
 from backend.application.commands.create_appointment_command import CreateAppointmentCommand
@@ -19,12 +20,16 @@ from backend.infrastructure.schemas import (
 )
 
 
-def build_create_appointment_command(payload: AppointmentCreateRequest) -> CreateAppointmentCommand:
+def build_create_appointment_command(
+    payload: AppointmentCreateRequest,
+    tenant_id: Optional[int] = None,
+) -> CreateAppointmentCommand:
     return CreateAppointmentCommand(
         barber_id=payload.barber_id,
         client_id=payload.client_id,
         service_id=payload.service_id,
         start_at=payload.data_inicio,
+        tenant_id=tenant_id,
     )
 
 
@@ -46,15 +51,27 @@ def build_get_appointment_query(appointment_id: int) -> GetAppointmentQuery:
 
 
 def build_list_barber_appointments_query(
-    barber_id: int, target_date: date | None = None
+    barber_id: int,
+    target_date: date | None = None,
+    tenant_id: Optional[int] = None,
 ) -> ListBarberAppointmentsQuery:
-    return ListBarberAppointmentsQuery(barber_id=barber_id, target_date=target_date)
+    return ListBarberAppointmentsQuery(
+        barber_id=barber_id,
+        target_date=target_date,
+        tenant_id=tenant_id,
+    )
 
 
 def build_list_client_appointments_query(
-    client_id: int, target_date: date | None = None
+    client_id: int,
+    target_date: date | None = None,
+    tenant_id: Optional[int] = None,
 ) -> ListClientAppointmentsQuery:
-    return ListClientAppointmentsQuery(client_id=client_id, target_date=target_date)
+    return ListClientAppointmentsQuery(
+        client_id=client_id,
+        target_date=target_date,
+        tenant_id=tenant_id,
+    )
 
 
 def ensure_appointment_found(appointment):

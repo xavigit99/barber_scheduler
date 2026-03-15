@@ -16,10 +16,10 @@ class ListClientAppointmentsHandler(RequestHandler[ListClientAppointmentsQuery, 
 
     def __init__(self, db: Session):
         self.db = db
-        self.client_repository = BaseRepository(Client, db)
 
     async def handle(self, query: ListClientAppointmentsQuery) -> list:
-        if self.client_repository.get(query.client_id) is None:
+        client_repository = BaseRepository(Client, self.db, query.tenant_id)
+        if client_repository.get(query.client_id) is None:
             raise NotFoundError("Client not found")
 
         appointment_query = (

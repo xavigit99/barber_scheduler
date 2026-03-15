@@ -1,6 +1,7 @@
 from datetime import date
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from backend.api.appointment_http import (
@@ -14,6 +15,9 @@ from backend.api.appointment_http import (
 )
 from backend.api.auth_dependencies import require_roles
 from backend.api.error_http import to_http_exception
+from backend.api.tenant_header import TENANT_HEADER_ALIAS
+from backend.core.barber import Barber
+from backend.core.client import Client
 from backend.core.exceptions import ConflictError, NotFoundError, ValidationError
 from backend.core.roles import ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE
 from backend.infrastructure.database import get_db
@@ -23,6 +27,7 @@ from backend.infrastructure.schemas import (
     AppointmentRescheduleRequest,
 )
 from meditor import build_mediator
+from repositories.base_repository import BaseRepository
 
 router = APIRouter(prefix="/appointments", tags=["Appointments"])
 
@@ -33,16 +38,57 @@ def _get_user_id(current_user):
     return getattr(current_user, "id", None)
 
 
-def _authorize_user_for_appointment(current_user, appointment):
+def _get_user_role(current_user):
+    if isinstance(current_user, dict):
+        return current_user.get("role")
+    return getattr(current_user, "role", None)
+
+
+def _authorize_user_for_appointment(current_user, appointment, db: Session):
+    role = _get_user_role(current_user)
     user_id = _get_user_id(current_user)
-    role = getattr(current_user, "role", None) if not isinstance(current_user, dict) else current_user.get("role")
+
     if role == ADMIN_ROLE:
         return
-    if role == BARBER_ROLE and appointment.barber_id == user_id:
-        return
-    if role == CLIENT_ROLE and appointment.client_id == user_id:
-        return
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+
+    if role == BARBER_ROLE:
+        barber = (
+            db.query(Barber)
+            .filter(
+                Barber.user_id == user_id,
+                Barber.id == appointment.barber_id,
+                Barber.deleted.is_(False),
+            )
+            .first()
+        )
+        if barber is not None:
+            return
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions",
+        )
+
+    if role == CLIENT_ROLE:
+        client = (
+            db.query(Client)
+            .filter(
+                Client.user_id == user_id,
+                Client.id == appointment.client_id,
+                Client.deleted.is_(False),
+            )
+            .first()
+        )
+        if client is not None:
+            return
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions",
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Not enough permissions",
+    )
 
 
 @router.post("/", response_model=AppointmentResponse, status_code=status.HTTP_201_CREATED)
@@ -50,16 +96,18 @@ async def create_appointment(
     payload: AppointmentCreateRequest,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles(ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE)),
+    tenant_id: Optional[int] = Header(None, alias=TENANT_HEADER_ALIAS),
 ):
     mediator = build_mediator(db)
     user_id = _get_user_id(current_user)
-    if getattr(current_user, "role", None) == CLIENT_ROLE and payload.client_id != user_id:
+    role = _get_user_role(current_user)
+    if role == CLIENT_ROLE and payload.client_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Clients may only create their own appointments",
         )
     try:
-        return await mediator.send(build_create_appointment_command(payload))
+        return await mediator.send(build_create_appointment_command(payload, tenant_id))
     except (ConflictError, NotFoundError, ValidationError) as exc:
         raise to_http_exception(exc) from exc
 
@@ -74,7 +122,7 @@ async def reschedule_appointment(
     mediator = build_mediator(db)
     appointment = await mediator.send(build_get_appointment_query(appointment_id))
     ensure_appointment_found(appointment)
-    _authorize_user_for_appointment(current_user, appointment)
+    _authorize_user_for_appointment(current_user, appointment, db)
     try:
         return await mediator.send(
             build_reschedule_appointment_command(appointment_id, payload)
@@ -92,7 +140,7 @@ async def cancel_appointment(
     mediator = build_mediator(db)
     appointment = await mediator.send(build_get_appointment_query(appointment_id))
     ensure_appointment_found(appointment)
-    _authorize_user_for_appointment(current_user, appointment)
+    _authorize_user_for_appointment(current_user, appointment, db)
     deleted = await mediator.send(build_cancel_appointment_command(appointment_id))
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found")
@@ -108,10 +156,31 @@ async def list_barber_appointments(
     target_date: date | None = None,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles(ADMIN_ROLE, BARBER_ROLE)),
+    tenant_id: Optional[int] = Header(None, alias=TENANT_HEADER_ALIAS),
 ):
+    role = _get_user_role(current_user)
+    user_id = _get_user_id(current_user)
+
+    if role == BARBER_ROLE:
+        # Barbers can only view their own schedule
+        barber = (
+            db.query(Barber)
+            .filter(
+                Barber.user_id == user_id,
+                Barber.id == barber_id,
+                Barber.deleted.is_(False),
+            )
+            .first()
+        )
+        if barber is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not enough permissions",
+            )
+
     mediator = build_mediator(db)
     appointments = await mediator.send(
-        build_list_barber_appointments_query(barber_id, target_date)
+        build_list_barber_appointments_query(barber_id, target_date, tenant_id)
     )
     return appointments
 
@@ -121,11 +190,25 @@ async def list_my_appointments(
     target_date: date | None = None,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles(CLIENT_ROLE)),
+    tenant_id: Optional[int] = Header(None, alias=TENANT_HEADER_ALIAS),
 ):
-    mediator = build_mediator(db)
     user_id = _get_user_id(current_user)
+
+    # Look up the client entity linked to this user
+    client = (
+        db.query(Client)
+        .filter(
+            Client.user_id == user_id,
+            Client.deleted.is_(False),
+        )
+        .first()
+    )
+    if client is None:
+        return []
+
+    mediator = build_mediator(db)
     return await mediator.send(
-        build_list_client_appointments_query(user_id, target_date)
+        build_list_client_appointments_query(client.id, target_date, tenant_id)
     )
 
 

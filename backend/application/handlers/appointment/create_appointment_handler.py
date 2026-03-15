@@ -22,20 +22,22 @@ class CreateAppointmentHandler(RequestHandler[CreateAppointmentCommand, object])
 
     def __init__(self, db: Session):
         self.db = db
-        self.barber_repository = BaseRepository(Barber, db)
-        self.client_repository = BaseRepository(Client, db)
-        self.service_repository = BaseRepository(Service, db)
 
     async def handle(self, command: CreateAppointmentCommand):
-        barber = self.barber_repository.get(command.barber_id)
+        tenant_id = command.tenant_id
+        barber_repository = BaseRepository(Barber, self.db, tenant_id)
+        client_repository = BaseRepository(Client, self.db, tenant_id)
+        service_repository = BaseRepository(Service, self.db, tenant_id)
+
+        barber = barber_repository.get(command.barber_id)
         if barber is None:
             raise NotFoundError("Barber not found")
 
-        client = self.client_repository.get(command.client_id)
+        client = client_repository.get(command.client_id)
         if client is None:
             raise NotFoundError("Client not found")
 
-        service = self.service_repository.get(command.service_id)
+        service = service_repository.get(command.service_id)
         if service is None:
             raise NotFoundError("Service not found")
 
@@ -80,6 +82,7 @@ class CreateAppointmentHandler(RequestHandler[CreateAppointmentCommand, object])
             barber_id=command.barber_id,
             client_id=command.client_id,
             service_id=command.service_id,
+            tenant_id=tenant_id,
             start_at=start_at,
             end_at=end_at,
             created_at=now,
