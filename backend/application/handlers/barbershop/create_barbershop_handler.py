@@ -1,3 +1,4 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.commands.create_barbershop_command import CreateBarbershopCommand
@@ -6,7 +7,6 @@ from backend.core.exceptions import NotFoundError
 from backend.core.tenant import Tenant
 from backend.core.tenant_slug import slugify_tenant_name
 from backend.core.user import User
-from diator.requests import RequestHandler
 
 
 class CreateBarbershopHandler(RequestHandler[CreateBarbershopCommand, object]):

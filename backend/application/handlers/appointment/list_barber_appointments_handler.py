@@ -1,12 +1,12 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.queries.list_barber_appointments_query import (
     ListBarberAppointmentsQuery,
 )
 from backend.core.appointment import Appointment
-from backend.core.exceptions import NotFoundError
 from backend.core.barber import Barber
-from diator.requests import RequestHandler
+from backend.core.exceptions import NotFoundError
 from repositories.base_repository import BaseRepository
 
 

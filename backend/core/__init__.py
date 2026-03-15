@@ -1,8 +1,8 @@
 from backend.core.appointment import Appointment
+from backend.core.barber import Barber
 from backend.core.barber_availability import BarberAvailability
 from backend.core.barber_block import BarberBlock
 from backend.core.barbershop import Barbershop
-from backend.core.barber import Barber
 from backend.core.client import Client
 from backend.core.roles import ADMIN_ROLE, ALLOWED_ROLES, BARBER_ROLE, CLIENT_ROLE
 from backend.core.scheduling import (

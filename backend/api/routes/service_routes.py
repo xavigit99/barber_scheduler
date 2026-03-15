@@ -12,12 +12,11 @@ from backend.api.service_http import (
     ensure_service_found,
     ensure_service_update_payload_has_changes,
 )
+from backend.api.tenant_header import TENANT_HEADER_ALIAS, require_tenant_id
 from backend.core.roles import ADMIN_ROLE
 from backend.infrastructure.database import get_db
 from backend.infrastructure.schemas import ServiceCreate, ServiceResponse, ServiceUpdate
 from meditor import build_mediator
-from backend.api.tenant_header import TENANT_HEADER_ALIAS, require_tenant_id
-
 
 router = APIRouter(prefix="/services", tags=["Services"])
 

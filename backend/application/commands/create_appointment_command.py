@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 from diator.requests import Request
 
@@ -11,4 +10,4 @@ class CreateAppointmentCommand(Request):
     client_id: int
     service_id: int
     start_at: datetime
-    tenant_id: Optional[int] = None
+    tenant_id: int | None = None

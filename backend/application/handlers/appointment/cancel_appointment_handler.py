@@ -1,9 +1,8 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.commands.cancel_appointment_command import CancelAppointmentCommand
 from backend.core.appointment import Appointment
-from backend.core.exceptions import NotFoundError
-from diator.requests import RequestHandler
 
 
 class CancelAppointmentHandler(RequestHandler[CancelAppointmentCommand, bool]):

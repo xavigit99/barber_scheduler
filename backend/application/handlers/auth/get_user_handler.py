@@ -1,8 +1,8 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.queries.get_user_query import GetUserQuery
 from backend.core.user import User
-from diator.requests import RequestHandler
 
 
 class GetUserHandler(RequestHandler[GetUserQuery, object | None]):

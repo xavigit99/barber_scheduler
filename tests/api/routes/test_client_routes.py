@@ -8,9 +8,9 @@ from fastapi import HTTPException, Response
 
 from backend.api.routes.client_routes import (
     create_client,
-    list_clients,
     delete_client,
     get_client,
+    list_clients,
     replace_client,
     update_client,
 )

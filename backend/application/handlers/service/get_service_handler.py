@@ -1,8 +1,8 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.queries.get_service_query import GetServiceQuery
 from backend.core.service import Service
-from diator.requests import RequestHandler
 from repositories.base_repository import BaseRepository
 
 

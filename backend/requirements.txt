@@ -7,3 +7,7 @@ diator==0.1.2
 di==0.79.2
 psycopg2-binary==2.9.11
 alembic==1.18.4
+slowapi==0.1.9
+python-multipart==0.0.20
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]==1.7.4

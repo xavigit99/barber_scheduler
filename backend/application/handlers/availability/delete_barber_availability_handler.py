@@ -1,10 +1,10 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.commands.delete_barber_availability_command import (
     DeleteBarberAvailabilityCommand,
 )
 from backend.core.barber_availability import BarberAvailability
-from diator.requests import RequestHandler
 
 
 class DeleteBarberAvailabilityHandler(RequestHandler[DeleteBarberAvailabilityCommand, bool]):

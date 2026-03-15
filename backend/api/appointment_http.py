@@ -1,5 +1,4 @@
-from datetime import date, datetime
-from typing import Optional
+from datetime import date
 
 from backend.application.commands.cancel_appointment_command import CancelAppointmentCommand
 from backend.application.commands.create_appointment_command import CreateAppointmentCommand
@@ -15,14 +14,13 @@ from backend.application.queries.list_client_appointments_query import (
 )
 from backend.infrastructure.schemas import (
     AppointmentCreateRequest,
-    AppointmentResponse,
     AppointmentRescheduleRequest,
 )
 
 
 def build_create_appointment_command(
     payload: AppointmentCreateRequest,
-    tenant_id: Optional[int] = None,
+    tenant_id: int | None = None,
 ) -> CreateAppointmentCommand:
     return CreateAppointmentCommand(
         barber_id=payload.barber_id,
@@ -53,7 +51,7 @@ def build_get_appointment_query(appointment_id: int) -> GetAppointmentQuery:
 def build_list_barber_appointments_query(
     barber_id: int,
     target_date: date | None = None,
-    tenant_id: Optional[int] = None,
+    tenant_id: int | None = None,
 ) -> ListBarberAppointmentsQuery:
     return ListBarberAppointmentsQuery(
         barber_id=barber_id,
@@ -65,7 +63,7 @@ def build_list_barber_appointments_query(
 def build_list_client_appointments_query(
     client_id: int,
     target_date: date | None = None,
-    tenant_id: Optional[int] = None,
+    tenant_id: int | None = None,
 ) -> ListClientAppointmentsQuery:
     return ListClientAppointmentsQuery(
         client_id=client_id,

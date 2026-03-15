@@ -1,5 +1,6 @@
 from datetime import datetime, time, timedelta
 
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.queries.list_client_appointments_query import (
@@ -8,7 +9,6 @@ from backend.application.queries.list_client_appointments_query import (
 from backend.core.appointment import Appointment
 from backend.core.client import Client
 from backend.core.exceptions import NotFoundError
-from diator.requests import RequestHandler
 from repositories.base_repository import BaseRepository
 
 

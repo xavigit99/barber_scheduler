@@ -1,9 +1,9 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.queries.get_appointment_query import GetAppointmentQuery
 from backend.core.appointment import Appointment
 from backend.core.exceptions import NotFoundError
-from diator.requests import RequestHandler
 
 
 class GetAppointmentHandler(RequestHandler[GetAppointmentQuery, object]):

@@ -1,20 +1,20 @@
 from datetime import datetime, timedelta
 
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.commands.create_appointment_command import CreateAppointmentCommand
 from backend.core.appointment import Appointment
+from backend.core.appointment_utils import (
+    ensure_not_blocked,
+    ensure_within_availability_windows,
+)
 from backend.core.barber import Barber
 from backend.core.barber_availability import BarberAvailability
 from backend.core.barber_block import BarberBlock
 from backend.core.client import Client
 from backend.core.exceptions import ConflictError, NotFoundError
 from backend.core.service import Service
-from backend.core.appointment_utils import (
-    ensure_not_blocked,
-    ensure_within_availability_windows,
-)
-from diator.requests import RequestHandler
 from repositories.base_repository import BaseRepository
 
 

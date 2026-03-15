@@ -1,3 +1,4 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.commands.create_barber_availability_command import (
@@ -11,7 +12,6 @@ from backend.core.scheduling import (
     validate_time_range,
     validate_weekday,
 )
-from diator.requests import RequestHandler
 from repositories.base_repository import BaseRepository
 
 

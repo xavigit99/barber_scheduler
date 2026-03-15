@@ -1,8 +1,8 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.commands.update_barbershop_command import UpdateBarbershopCommand
 from backend.core.barbershop import Barbershop
-from diator.requests import RequestHandler
 from repositories.base_repository import BaseRepository
 
 

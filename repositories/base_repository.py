@@ -1,4 +1,5 @@
-from typing import Type, TypeVar, Generic, List, Optional
+from typing import Generic, TypeVar
+
 from sqlalchemy.orm import Session
 
 T = TypeVar("T")  
@@ -6,7 +7,7 @@ T = TypeVar("T")
 
 class BaseRepository(Generic[T]):
 
-    def __init__(self, model: Type[T], db: Session, tenant_id: int | None = None):
+    def __init__(self, model: type[T], db: Session, tenant_id: int | None = None):
         self.model = model
         self.db = db
         self.tenant_id = tenant_id
@@ -22,10 +23,10 @@ class BaseRepository(Generic[T]):
             query = query.filter(self.model.deleted.is_(False))
         return query
 
-    def get(self, id: int) -> Optional[T]:
+    def get(self, id: int) -> T | None:
         return self._query().filter(self.model.id == id).first()
 
-    def list(self) -> List[T]:
+    def list(self) -> list[T]:
         return self._query().all()
 
     def create(self, obj_data: dict) -> T:
@@ -35,7 +36,7 @@ class BaseRepository(Generic[T]):
         self.db.refresh(obj)
         return obj
 
-    def update(self, id: int, obj_data: dict) -> Optional[T]:
+    def update(self, id: int, obj_data: dict) -> T | None:
         obj = self.get(id)
         if not obj:
             return None
