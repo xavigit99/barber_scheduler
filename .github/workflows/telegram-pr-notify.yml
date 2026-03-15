@@ -10,14 +10,14 @@ jobs:
     steps:
       - name: Send Telegram message
         run: |
-          TEXT="🔔 *Novo PR aberto*
+          TEXT="🔔 <b>Novo PR aberto</b>
 
-          📌 *${{ github.event.pull_request.title }}*
-          👤 Por: ${{ github.event.pull_request.user.login }}
-          🌿 \`${{ github.event.pull_request.head.ref }}\` → \`${{ github.event.pull_request.base.ref }}\`
-          🔗 ${{ github.event.pull_request.html_url }}"
+📌 ${{ github.event.pull_request.title }}
+👤 Por: ${{ github.event.pull_request.user.login }}
+🌿 ${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}
+🔗 ${{ github.event.pull_request.html_url }}"
 
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d parse_mode="Markdown" \
+            -d parse_mode="HTML" \
             --data-urlencode "text=${TEXT}"
