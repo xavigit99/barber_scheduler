@@ -91,4 +91,22 @@ class CreateAppointmentHandler(RequestHandler[CreateAppointmentCommand, object])
         self.db.add(appointment)
         self.db.commit()
         self.db.refresh(appointment)
+
+        # Notify client (best-effort — never fail the main operation)
+        try:
+            from backend.core.notifications import AppointmentNotification, get_notification_service
+
+            get_notification_service().send_confirmation(
+                AppointmentNotification(
+                    client_name=client.nome,
+                    client_email=client.email,
+                    barber_name=barber.nome,
+                    service_name=service.nome,
+                    start_at=command.start_at,
+                    appointment_id=appointment.id,
+                )
+            )
+        except Exception:
+            pass
+
         return appointment
