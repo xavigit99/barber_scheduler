@@ -1,0 +1,14 @@
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String
+
+from backend.infrastructure.database import Base
+
+
+class Service(Base):
+    __tablename__ = "servicos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String, nullable=False)
+    duracao_minutos = Column(Integer, nullable=False)
+    preco = Column(Float, nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    deleted = Column(Boolean, nullable=False, default=False, index=True)

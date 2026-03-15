@@ -1,0 +1,18 @@
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer
+
+from backend.infrastructure.database import Base
+
+
+class Appointment(Base):
+    __tablename__ = "appointments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    barber_id = Column(Integer, ForeignKey("barbeiros.id"), nullable=False, index=True)
+    client_id = Column(Integer, ForeignKey("clientes.id"), nullable=False, index=True)
+    service_id = Column(Integer, ForeignKey("servicos.id"), nullable=False, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=True, index=True)
+    start_at = Column(DateTime, nullable=False, index=True)
+    end_at = Column(DateTime, nullable=False, index=True)
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=False)
+    deleted = Column(Boolean, nullable=False, default=False, index=True)
