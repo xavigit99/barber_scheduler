@@ -1,5 +1,4 @@
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from sqlalchemy.orm import Session
@@ -23,11 +22,10 @@ from backend.core.roles import ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE
 from backend.infrastructure.database import get_db
 from backend.infrastructure.schemas import (
     AppointmentCreateRequest,
-    AppointmentResponse,
     AppointmentRescheduleRequest,
+    AppointmentResponse,
 )
 from meditor import build_mediator
-from repositories.base_repository import BaseRepository
 
 router = APIRouter(prefix="/appointments", tags=["Appointments"])
 
@@ -96,7 +94,7 @@ async def create_appointment(
     payload: AppointmentCreateRequest,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles(ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE)),
-    tenant_id: Optional[int] = Header(None, alias=TENANT_HEADER_ALIAS),
+    tenant_id: int | None = Header(None, alias=TENANT_HEADER_ALIAS),
 ):
     mediator = build_mediator(db)
     user_id = _get_user_id(current_user)
@@ -156,7 +154,7 @@ async def list_barber_appointments(
     target_date: date | None = None,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles(ADMIN_ROLE, BARBER_ROLE)),
-    tenant_id: Optional[int] = Header(None, alias=TENANT_HEADER_ALIAS),
+    tenant_id: int | None = Header(None, alias=TENANT_HEADER_ALIAS),
 ):
     role = _get_user_role(current_user)
     user_id = _get_user_id(current_user)
@@ -190,7 +188,7 @@ async def list_my_appointments(
     target_date: date | None = None,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles(CLIENT_ROLE)),
-    tenant_id: Optional[int] = Header(None, alias=TENANT_HEADER_ALIAS),
+    tenant_id: int | None = Header(None, alias=TENANT_HEADER_ALIAS),
 ):
     user_id = _get_user_id(current_user)
 

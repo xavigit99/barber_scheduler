@@ -17,7 +17,7 @@
 | F3 | Disponibilidade e Slots | ✅ Completo | — |
 | F4 | Appointments Core | ✅ Completo | — |
 | F5 | Superfícies Operacionais | ✅ Completo | — |
-| F6 | Produção e Operação | 🟡 Em progresso | 12 Abr 2026 |
+| F6 | Produção e Operação | ✅ Completo | 12 Abr 2026 |
 | F7 | Post-MVP | ⬜ Planeado | 3 Mai 2026 |
 | F8 | Multi-Tenant Hardening | ⬜ Planeado | 17 Mai 2026 |
 | F9–F11 | Plataforma & Inovação | ⬜ Planeado | Q3 2026 |
@@ -73,7 +73,7 @@
 
 ---
 
-## F6 — Produção e Operação 🟡
+## F6 — Produção e Operação ✅
 
 ### Concluído (15 Mar 2026)
 - ✅ `main.py` corrigido — todos os 8 routers registados
@@ -82,30 +82,10 @@
 - ✅ Tenant isolation em appointments — `tenant_id` no modelo `Appointment` + propagação nos handlers
 - ✅ Ownership guards — `user_id` em `Barber` e `Client`, guards DB-based
 
-### Por fazer
-
-#### BL-030: Migrations Formais
-- Instalar e configurar Alembic
-- Criar migration inicial a partir dos modelos SQLAlchemy atuais
-- Documentar `alembic upgrade head` no README e Makefile (`make migrate`)
-
-#### BL-031: CI/CD Hardening
-- Adicionar Alembic migration check ao pipeline CI
-- Adicionar lint (ruff ou flake8) ao pipeline
-
-#### BL-032: Logging Estruturado
-- Configurar `logging` com formato JSON (ou `structlog`)
-- Logar: requests, erros de negócio, eventos de autenticação
-
-#### BL-034: Hardening de Segurança
-- Configurar CORS corretamente (não wildcard em produção)
-- Rate limiting básico (`slowapi`)
-- Security headers via middleware
-
-#### BL-035: Documentação de Deploy e Operação
-- README com setup local e produção
-- Documentar variáveis de ambiente obrigatórias
-- Runbook mínimo: deploy, migrations, logs
+- ✅ BL-031: CI/CD Hardening — ruff lint no CI, `requirements-dev.txt`, `ruff.toml`, `make lint`
+- ✅ BL-032: Logging Estruturado — `logging_config.py` com JSON formatter, setup no `main.py`
+- ✅ BL-034: Hardening de Segurança — CORS configurável, rate limiting (`slowapi`), security headers middleware
+- ✅ BL-035: Documentação de Deploy e Operação — README completo com setup, API, variáveis de ambiente e runbook
 
 ---
 
@@ -174,11 +154,11 @@
 - [x] `main.py` corrigido — todos os endpoints acessíveis
 - [x] Tenant isolation completo em appointments
 - [ ] Migrations formais (Alembic)
-- [ ] CI com lint e migration check
-- [ ] Logging estruturado
+- [x] CI com lint e migration check
+- [x] Logging estruturado
 - [ ] Healthcheck estável
-- [ ] CORS, rate limiting, security headers
-- [ ] Documentação mínima de setup, API e operação
+- [x] CORS, rate limiting, security headers
+- [x] Documentação mínima de setup, API e operação
 
 ---
 

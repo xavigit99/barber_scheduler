@@ -1,3 +1,4 @@
+from diator.requests import RequestHandler
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -6,7 +7,6 @@ from backend.core.exceptions import ConflictError
 from backend.core.roles import ALLOWED_ROLES
 from backend.core.security import hash_password
 from backend.core.user import User
-from diator.requests import RequestHandler
 
 
 class CreateUserHandler(RequestHandler[CreateUserCommand, object]):

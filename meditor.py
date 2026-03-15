@@ -1,14 +1,16 @@
-import os
 import importlib
 import inspect
-import di
+import os
 from typing import get_args
-from di.dependent import Dependent
-from diator.mediator import Mediator
-from diator.container.di import DIContainer
-from diator.requests import RequestHandler, RequestMap 
+
+import di
 from di import bind_by_type
+from di.dependent import Dependent
+from diator.container.di import DIContainer
+from diator.mediator import Mediator
+from diator.requests import RequestMap
 from sqlalchemy.orm import Session
+
 
 def build_mediator(db: Session) -> Mediator:
     container = di.Container()

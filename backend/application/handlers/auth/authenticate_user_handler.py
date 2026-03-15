@@ -1,10 +1,10 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.commands.authenticate_user_command import AuthenticateUserCommand
 from backend.core.exceptions import AuthenticationError
 from backend.core.security import create_access_token, verify_password
 from backend.core.user import User
-from diator.requests import RequestHandler
 
 
 class AuthenticateUserHandler(RequestHandler[AuthenticateUserCommand, dict]):

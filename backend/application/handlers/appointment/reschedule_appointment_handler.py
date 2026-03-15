@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.commands.reschedule_appointment_command import (
@@ -12,9 +13,8 @@ from backend.core.appointment_utils import (
 )
 from backend.core.barber_availability import BarberAvailability
 from backend.core.barber_block import BarberBlock
-from backend.core.service import Service
 from backend.core.exceptions import ConflictError, NotFoundError
-from diator.requests import RequestHandler
+from backend.core.service import Service
 
 
 class RescheduleAppointmentHandler(RequestHandler[RescheduleAppointmentCommand, object]):

@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime
 
 from backend.core.exceptions import ConflictError, ValidationError
 from backend.core.scheduling import datetime_ranges_overlap

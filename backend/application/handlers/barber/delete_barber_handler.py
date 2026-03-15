@@ -1,8 +1,8 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.commands.delete_barber_command import DeleteBarberCommand
 from backend.core.barber import Barber
-from diator.requests import RequestHandler
 from repositories.base_repository import BaseRepository
 
 

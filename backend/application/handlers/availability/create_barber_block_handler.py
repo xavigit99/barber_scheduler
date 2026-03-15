@@ -1,3 +1,4 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.commands.create_barber_block_command import CreateBarberBlockCommand
@@ -8,7 +9,6 @@ from backend.core.scheduling import (
     validate_block_kind,
     validate_datetime_range,
 )
-from diator.requests import RequestHandler
 from repositories.base_repository import BaseRepository
 
 

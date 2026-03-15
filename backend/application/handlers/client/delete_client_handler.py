@@ -1,8 +1,8 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.commands.delete_client_command import DeleteClientCommand
 from backend.core.client import Client
-from diator.requests import RequestHandler
 from repositories.base_repository import BaseRepository
 
 

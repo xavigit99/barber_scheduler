@@ -1,8 +1,8 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.commands.delete_barber_block_command import DeleteBarberBlockCommand
 from backend.core.barber_block import BarberBlock
-from diator.requests import RequestHandler
 
 
 class DeleteBarberBlockHandler(RequestHandler[DeleteBarberBlockCommand, bool]):

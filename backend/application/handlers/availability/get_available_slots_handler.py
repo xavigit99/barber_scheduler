@@ -1,5 +1,6 @@
 from datetime import datetime, time, timedelta
 
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.queries.get_available_slots_query import GetAvailableSlotsQuery
@@ -9,7 +10,6 @@ from backend.core.barber_block import BarberBlock
 from backend.core.exceptions import NotFoundError
 from backend.core.scheduling import build_daily_slots
 from backend.core.service import Service
-from diator.requests import RequestHandler
 from repositories.base_repository import BaseRepository
 
 

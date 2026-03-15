@@ -33,7 +33,6 @@ from backend.application.queries.list_barber_availabilities_query import (
     ListBarberAvailabilitiesQuery,
 )
 from backend.core.barber_availability import BarberAvailability
-from backend.core.barber_block import BarberBlock
 from backend.core.exceptions import ConflictError, NotFoundError, ValidationError
 
 

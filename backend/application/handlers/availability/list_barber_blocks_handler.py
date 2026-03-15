@@ -1,10 +1,10 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.queries.list_barber_blocks_query import ListBarberBlocksQuery
 from backend.core.barber import Barber
 from backend.core.barber_block import BarberBlock
 from backend.core.exceptions import NotFoundError
-from diator.requests import RequestHandler
 from repositories.base_repository import BaseRepository
 
 

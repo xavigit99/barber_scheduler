@@ -1,3 +1,4 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.queries.list_barber_availabilities_query import (
@@ -6,7 +7,6 @@ from backend.application.queries.list_barber_availabilities_query import (
 from backend.core.barber import Barber
 from backend.core.barber_availability import BarberAvailability
 from backend.core.exceptions import NotFoundError
-from diator.requests import RequestHandler
 from repositories.base_repository import BaseRepository
 
 

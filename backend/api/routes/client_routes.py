@@ -12,8 +12,8 @@ from backend.api.client_http import (
     ensure_client_found,
     ensure_update_payload_has_changes,
 )
-from backend.core.roles import ADMIN_ROLE, BARBER_ROLE
 from backend.api.tenant_header import TENANT_HEADER_ALIAS, require_tenant_id
+from backend.core.roles import ADMIN_ROLE, BARBER_ROLE
 from backend.infrastructure.database import get_db
 from backend.infrastructure.schemas import ClientCreate, ClientResponse, ClientUpdate
 from meditor import build_mediator

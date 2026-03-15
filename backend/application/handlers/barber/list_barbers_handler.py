@@ -1,8 +1,8 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.queries.list_barbers_query import ListBarbersQuery
 from backend.core.barber import Barber
-from diator.requests import RequestHandler
 from repositories.base_repository import BaseRepository
 
 

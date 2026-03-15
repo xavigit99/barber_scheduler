@@ -1,13 +1,13 @@
-from backend.application.commands.create_client_command import CreateClientCommand
-from backend.application.commands.delete_client_command import DeleteClientCommand
-from backend.application.commands.update_client_command import UpdateClientCommand
-from backend.application.queries.get_client_query import GetClientQuery
-from backend.application.queries.list_clients_query import ListClientsQuery
 from backend.api.http_utils import (
     ensure_payload_has_changes,
     ensure_resource_deleted,
     ensure_resource_found,
 )
+from backend.application.commands.create_client_command import CreateClientCommand
+from backend.application.commands.delete_client_command import DeleteClientCommand
+from backend.application.commands.update_client_command import UpdateClientCommand
+from backend.application.queries.get_client_query import GetClientQuery
+from backend.application.queries.list_clients_query import ListClientsQuery
 from backend.infrastructure.schemas import ClientCreate, ClientUpdate
 
 

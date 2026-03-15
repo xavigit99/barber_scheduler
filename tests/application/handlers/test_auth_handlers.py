@@ -13,7 +13,7 @@ from backend.application.handlers.auth.create_user_handler import CreateUserHand
 from backend.application.handlers.auth.get_user_handler import GetUserHandler
 from backend.application.queries.get_user_query import GetUserQuery
 from backend.core.exceptions import AuthenticationError, ConflictError
-from backend.core.roles import ADMIN_ROLE, BARBER_ROLE
+from backend.core.roles import ADMIN_ROLE
 from backend.core.security import decode_access_token, hash_password
 from backend.core.user import User
 

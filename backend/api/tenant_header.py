@@ -1,6 +1,5 @@
 from fastapi import HTTPException, status
 
-
 TENANT_HEADER_ALIAS = "X-Tenant-Id"
 
 

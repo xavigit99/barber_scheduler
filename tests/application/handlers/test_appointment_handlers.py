@@ -1,23 +1,23 @@
 import os
 import unittest
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
+from backend.application.commands.cancel_appointment_command import (
+    CancelAppointmentCommand,
+)
 from backend.application.commands.create_appointment_command import CreateAppointmentCommand
 from backend.application.commands.reschedule_appointment_command import (
     RescheduleAppointmentCommand,
 )
-from backend.application.handlers.appointment.create_appointment_handler import (
-    CreateAppointmentHandler,
-)
-from backend.application.handlers.appointment.reschedule_appointment_handler import (
-    RescheduleAppointmentHandler,
-)
 from backend.application.handlers.appointment.cancel_appointment_handler import (
     CancelAppointmentHandler,
+)
+from backend.application.handlers.appointment.create_appointment_handler import (
+    CreateAppointmentHandler,
 )
 from backend.application.handlers.appointment.list_barber_appointments_handler import (
     ListBarberAppointmentsHandler,
@@ -25,8 +25,8 @@ from backend.application.handlers.appointment.list_barber_appointments_handler i
 from backend.application.handlers.appointment.list_client_appointments_handler import (
     ListClientAppointmentsHandler,
 )
-from backend.application.commands.cancel_appointment_command import (
-    CancelAppointmentCommand,
+from backend.application.handlers.appointment.reschedule_appointment_handler import (
+    RescheduleAppointmentHandler,
 )
 from backend.application.queries.list_barber_appointments_query import (
     ListBarberAppointmentsQuery,
@@ -34,10 +34,7 @@ from backend.application.queries.list_barber_appointments_query import (
 from backend.application.queries.list_client_appointments_query import (
     ListClientAppointmentsQuery,
 )
-from backend.core.barber import Barber
-from backend.core.barber_availability import BarberAvailability
-from backend.core.barber_block import BarberBlock
-from backend.core.exceptions import ConflictError, NotFoundError
+from backend.core.exceptions import ConflictError
 
 
 class AppointmentHandlersTestCase(unittest.IsolatedAsyncioTestCase):

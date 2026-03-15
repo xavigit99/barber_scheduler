@@ -1,13 +1,12 @@
+from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.commands.bootstrap_admin_command import BootstrapAdminCommand
 from backend.application.commands.create_user_command import CreateUserCommand
+from backend.application.handlers.auth.create_user_handler import CreateUserHandler
 from backend.core.exceptions import ConflictError
 from backend.core.roles import ADMIN_ROLE
 from backend.core.user import User
-from diator.requests import RequestHandler
-
-from backend.application.handlers.auth.create_user_handler import CreateUserHandler
 
 
 class BootstrapAdminHandler(RequestHandler[BootstrapAdminCommand, object]):

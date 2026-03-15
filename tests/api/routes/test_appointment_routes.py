@@ -1,6 +1,6 @@
 import os
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -10,15 +10,15 @@ from fastapi import HTTPException
 from fastapi.responses import Response
 
 from backend.api.routes.appointment_routes import (
+    _authorize_user_for_appointment,
     cancel_appointment,
     create_appointment,
     get_appointment,
     list_barber_appointments,
     list_my_appointments,
     reschedule_appointment,
-    _authorize_user_for_appointment,
 )
-from backend.core.exceptions import ConflictError, NotFoundError, ValidationError
+from backend.core.exceptions import ConflictError
 from backend.core.roles import ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE
 from backend.infrastructure.schemas import (
     AppointmentCreateRequest,
