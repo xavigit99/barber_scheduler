@@ -7,6 +7,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+import backend.core  # noqa: F401 — registers all models on Base.metadata
 from backend.api.routes.appointment_routes import router as appointment_router
 from backend.api.routes.auth_routes import router as auth_router
 from backend.api.routes.availability_routes import router as availability_router

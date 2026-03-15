@@ -5,6 +5,7 @@ from backend.application.queries.get_user_query import GetUserQuery
 from backend.infrastructure.schemas import (
     AuthLoginRequest,
     BootstrapAdminRequest,
+    ClientRegisterRequest,
     UserCreateRequest,
 )
 
@@ -30,6 +31,15 @@ def build_create_user_command(payload: UserCreateRequest) -> CreateUserCommand:
         email=payload.email,
         password=payload.password,
         role=payload.role,
+    )
+
+
+def build_register_client_command(payload: ClientRegisterRequest) -> CreateUserCommand:
+    return CreateUserCommand(
+        username=payload.username,
+        email=payload.email,
+        password=payload.password,
+        role="client",
     )
 
 
