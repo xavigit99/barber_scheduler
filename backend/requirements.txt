@@ -6,3 +6,4 @@ uvicorn==0.41.0
 diator==0.1.2
 di==0.79.2
 psycopg2-binary==2.9.11
+alembic==1.18.4
