@@ -13,12 +13,30 @@ from backend.api.client_http import (
     ensure_update_payload_has_changes,
 )
 from backend.api.tenant_header import TENANT_HEADER_ALIAS, require_tenant_id
-from backend.core.roles import ADMIN_ROLE, BARBER_ROLE
+from backend.core.client import Client
+from backend.core.roles import ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE
 from backend.infrastructure.database import get_db
 from backend.infrastructure.schemas import ClientCreate, ClientResponse, ClientUpdate
 from meditor import build_mediator
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
+
+
+@router.get("/me", response_model=ClientResponse)
+async def get_my_client(
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles(CLIENT_ROLE)),
+):
+    user_id = current_user.get("id") if isinstance(current_user, dict) else getattr(current_user, "id", None)
+    client = (
+        db.query(Client)
+        .filter(Client.user_id == user_id, Client.deleted.is_(False))
+        .first()
+    )
+    if client is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Client profile not found")
+    return client
 
 
 @router.post("/", response_model=ClientResponse, status_code=status.HTTP_201_CREATED)

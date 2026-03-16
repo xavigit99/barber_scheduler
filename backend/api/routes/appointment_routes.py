@@ -99,11 +99,17 @@ async def create_appointment(
     mediator = build_mediator(db)
     user_id = _get_user_id(current_user)
     role = _get_user_role(current_user)
-    if role == CLIENT_ROLE and payload.client_id != user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Clients may only create their own appointments",
+    if role == CLIENT_ROLE:
+        own_client = (
+            db.query(Client)
+            .filter(Client.user_id == user_id, Client.deleted.is_(False))
+            .first()
         )
+        if own_client is None or own_client.id != payload.client_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Clients may only create their own appointments",
+            )
     try:
         return await mediator.send(build_create_appointment_command(payload, tenant_id))
     except (ConflictError, NotFoundError, ValidationError) as exc:

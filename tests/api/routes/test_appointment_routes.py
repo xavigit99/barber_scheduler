@@ -256,13 +256,20 @@ class AppointmentRoutesTestCase(unittest.IsolatedAsyncioTestCase):
             data_inicio=datetime(2026, 3, 16, 9, 0),
         )
 
+        # db returns no client for user_id=4 → guard raises 403
+        db = MagicMock()
+        qb = MagicMock()
+        db.query.return_value = qb
+        qb.filter.return_value = qb
+        qb.first.return_value = None
+
         with patch(
             "backend.api.routes.appointment_routes.build_mediator", return_value=mediator
         ):
             with self.assertRaises(HTTPException) as context:
                 await create_appointment(
                     payload,
-                    db=object(),
+                    db=db,
                     current_user=_client_user(user_id=4),
                 )
 

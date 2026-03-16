@@ -209,6 +209,8 @@ class ClientRegisterRequest(BaseModel):
     username: str
     email: str
     password: str = Field(min_length=8)
+    nome: str
+    tenant_id: int
 
 
 class BootstrapAdminRequest(BaseModel):
