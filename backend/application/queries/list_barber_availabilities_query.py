@@ -6,3 +6,4 @@ from diator.requests import Request
 @dataclass(frozen=True)
 class ListBarberAvailabilitiesQuery(Request):
     barber_id: int
+    tenant_id: int | None = None

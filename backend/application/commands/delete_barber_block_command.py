@@ -7,3 +7,4 @@ from diator.requests import Request
 class DeleteBarberBlockCommand(Request):
     barber_id: int
     block_id: int
+    tenant_id: int | None = None

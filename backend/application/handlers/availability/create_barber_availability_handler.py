@@ -19,11 +19,9 @@ class CreateBarberAvailabilityHandler(RequestHandler[CreateBarberAvailabilityCom
 
     def __init__(self, db: Session):
         self.db = db
-        self.barber_repository = BaseRepository(Barber, db)
-        self.availability_repository = BaseRepository(BarberAvailability, db)
 
     async def handle(self, command: CreateBarberAvailabilityCommand):
-        if self.barber_repository.get(command.barber_id) is None:
+        if BaseRepository(Barber, self.db, tenant_id=command.tenant_id).get(command.barber_id) is None:
             raise NotFoundError("Barber not found")
 
         validate_weekday(command.weekday)
@@ -45,7 +43,7 @@ class CreateBarberAvailabilityHandler(RequestHandler[CreateBarberAvailabilityCom
             end_time=command.end_time,
         )
 
-        return self.availability_repository.create(
+        return BaseRepository(BarberAvailability, self.db).create(
             {
                 "barber_id": command.barber_id,
                 "weekday": command.weekday,

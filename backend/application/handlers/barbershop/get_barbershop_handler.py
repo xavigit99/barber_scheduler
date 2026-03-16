@@ -9,7 +9,7 @@ from repositories.base_repository import BaseRepository
 class GetBarbershopHandler(RequestHandler[GetBarbershopQuery, object | None]):
 
     def __init__(self, db: Session):
-        self.repository = BaseRepository(Barbershop, db)
+        self.db = db
 
     async def handle(self, query: GetBarbershopQuery):
-        return self.repository.get(query.barbershop_id)
+        return BaseRepository(Barbershop, self.db, tenant_id=query.tenant_id).get(query.barbershop_id)

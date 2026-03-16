@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 
 from backend.infrastructure.database import Base
 
@@ -13,3 +13,4 @@ class Barber(Base):
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     deleted = Column(Boolean, nullable=False, default=False, index=True)
+    deleted_at = Column(DateTime, nullable=True)

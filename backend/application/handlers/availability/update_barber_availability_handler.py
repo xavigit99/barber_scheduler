@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from backend.application.commands.update_barber_availability_command import (
     UpdateBarberAvailabilityCommand,
 )
+from backend.core.barber import Barber
 from backend.core.barber_availability import BarberAvailability
 from backend.core.exceptions import NotFoundError
 from backend.core.scheduling import (
@@ -18,9 +19,11 @@ class UpdateBarberAvailabilityHandler(RequestHandler[UpdateBarberAvailabilityCom
 
     def __init__(self, db: Session):
         self.db = db
-        self.repository = BaseRepository(BarberAvailability, db)
 
     async def handle(self, command: UpdateBarberAvailabilityCommand):
+        if BaseRepository(Barber, self.db, tenant_id=command.tenant_id).get(command.barber_id) is None:
+            raise NotFoundError("Barber not found")
+
         availability = (
             self.db.query(BarberAvailability)
             .filter(
@@ -62,4 +65,4 @@ class UpdateBarberAvailabilityHandler(RequestHandler[UpdateBarberAvailabilityCom
             "start_time": start_time,
             "end_time": end_time,
         }
-        return self.repository.update(command.availability_id, update_data)
+        return BaseRepository(BarberAvailability, self.db).update(command.availability_id, update_data)

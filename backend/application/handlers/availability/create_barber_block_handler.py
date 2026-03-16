@@ -15,17 +15,16 @@ from repositories.base_repository import BaseRepository
 class CreateBarberBlockHandler(RequestHandler[CreateBarberBlockCommand, object]):
 
     def __init__(self, db: Session):
-        self.barber_repository = BaseRepository(Barber, db)
-        self.block_repository = BaseRepository(BarberBlock, db)
+        self.db = db
 
     async def handle(self, command: CreateBarberBlockCommand):
-        if self.barber_repository.get(command.barber_id) is None:
+        if BaseRepository(Barber, self.db, tenant_id=command.tenant_id).get(command.barber_id) is None:
             raise NotFoundError("Barber not found")
 
         validate_block_kind(command.kind)
         validate_datetime_range(command.start_at, command.end_at)
 
-        return self.block_repository.create(
+        return BaseRepository(BarberBlock, self.db).create(
             {
                 "barber_id": command.barber_id,
                 "kind": command.kind,

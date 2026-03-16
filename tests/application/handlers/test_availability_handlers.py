@@ -103,6 +103,7 @@ class AvailabilityHandlersTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_update_barber_availability_handler_maps_fields(self):
         db = MagicMock()
+        barber_query = MagicMock()
         existing_query = MagicMock()
         overlap_query = MagicMock()
         update_query = MagicMock()
@@ -114,7 +115,9 @@ class AvailabilityHandlersTestCase(unittest.IsolatedAsyncioTestCase):
             end_time=time(17, 0),
         )
 
-        db.query.side_effect = [existing_query, overlap_query, update_query]
+        db.query.side_effect = [barber_query, existing_query, overlap_query, update_query]
+        barber_query.filter.return_value = barber_query
+        barber_query.first.return_value = object()
         existing_query.filter.return_value = existing_query
         existing_query.first.return_value = availability
         overlap_query.filter.return_value = overlap_query

@@ -13,3 +13,4 @@ class BarberBlock(Base):
     end_at = Column(DateTime, nullable=False, index=True)
     reason = Column(String, nullable=True)
     deleted = Column(Boolean, nullable=False, default=False, index=True)
+    deleted_at = Column(DateTime, nullable=True)

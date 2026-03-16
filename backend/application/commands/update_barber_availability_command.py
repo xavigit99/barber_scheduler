@@ -11,3 +11,4 @@ class UpdateBarberAvailabilityCommand(Request):
     weekday: int | None = None
     start_time: time | None = None
     end_time: time | None = None
+    tenant_id: int | None = None

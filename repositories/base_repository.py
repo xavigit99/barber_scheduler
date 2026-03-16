@@ -1,11 +1,9 @@
-from typing import Generic, TypeVar
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-T = TypeVar("T")  
 
-
-class BaseRepository(Generic[T]):
+class BaseRepository[T]:
 
     def __init__(self, model: type[T], db: Session, tenant_id: int | None = None):
         self.model = model
@@ -55,6 +53,8 @@ class BaseRepository(Generic[T]):
 
         if hasattr(obj, "deleted"):
             setattr(obj, "deleted", True)
+            if hasattr(obj, "deleted_at"):
+                setattr(obj, "deleted_at", datetime.now(UTC))
             self.db.commit()
             return True
 

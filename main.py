@@ -15,6 +15,7 @@ from backend.api.routes.barber_routes import router as barber_router
 from backend.api.routes.barbershop_routes import router as barbershop_router
 from backend.api.routes.client_routes import router as client_router
 from backend.api.routes.health_routes import router as health_router
+from backend.api.routes.membership_routes import router as membership_router
 from backend.api.routes.service_routes import router as service_router
 from backend.core.logging_config import setup_logging
 from backend.infrastructure.database import Base, engine
@@ -61,6 +62,7 @@ async def add_security_headers(request: Request, call_next):
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(barbershop_router)
+app.include_router(membership_router)
 app.include_router(barber_router)
 app.include_router(client_router)
 app.include_router(service_router)
