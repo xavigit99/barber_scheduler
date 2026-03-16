@@ -54,7 +54,7 @@ class AvailabilityHandlersTestCase(unittest.IsolatedAsyncioTestCase):
         result = await handler.handle(
             CreateBarberAvailabilityCommand(
                 barber_id=3,
-                weekday=0,
+                weekday=1,
                 start_time=time(9, 0),
                 end_time=time(17, 0),
             )
@@ -62,7 +62,7 @@ class AvailabilityHandlersTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsInstance(result, BarberAvailability)
         self.assertEqual(result.barber_id, 3)
-        self.assertEqual(result.weekday, 0)
+        self.assertEqual(result.weekday, 1)
         self.assertEqual(result.start_time, time(9, 0))
         self.assertEqual(result.end_time, time(17, 0))
         db.add.assert_called_once_with(result)

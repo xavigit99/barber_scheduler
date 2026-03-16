@@ -96,7 +96,7 @@ class TenantIsolationTestCase(unittest.IsolatedAsyncioTestCase):
             await handler.handle(
                 CreateBarberAvailabilityCommand(
                     barber_id=1,
-                    weekday=0,
+                    weekday=1,
                     start_time=time(9, 0),
                     end_time=time(17, 0),
                     tenant_id=99,
