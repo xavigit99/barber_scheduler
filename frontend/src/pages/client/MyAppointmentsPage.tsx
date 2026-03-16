@@ -5,13 +5,33 @@ import Table from '../../components/Table';
 import Button from '../../components/Button';
 import Spinner from '../../components/Spinner';
 import { useToast } from '../../components/Toast';
-import type { Appointment } from '../../types';
+import type { Appointment, Barber, Service } from '../../types';
 
 export default function MyAppointmentsPage() {
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [barbers, setBarbers] = useState<Record<string, string>>({});
+  const [services, setServices] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [targetDate, setTargetDate] = useState(() => new Date().toISOString().split('T')[0]);
+
+  /* Load barber/service name maps once */
+  useEffect(() => {
+    Promise.all([api.get('/barbers/'), api.get('/services/')])
+      .then(([bRes, sRes]) => {
+        const bMap: Record<string, string> = {};
+        (Array.isArray(bRes.data) ? bRes.data : []).forEach((b: Barber) => {
+          bMap[String(b.id)] = b.nome;
+        });
+        const sMap: Record<string, string> = {};
+        (Array.isArray(sRes.data) ? sRes.data : []).forEach((s: Service) => {
+          sMap[String(s.id)] = s.nome;
+        });
+        setBarbers(bMap);
+        setServices(sMap);
+      })
+      .catch(() => {/* non-critical, names will show as IDs */});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load(date: string) {
     setLoading(true);
@@ -79,7 +99,12 @@ export default function MyAppointmentsPage() {
             {
               key: 'barber',
               header: 'Barbeiro',
-              render: (a) => <span className="font-mono text-xs">{a.barber_id.slice(0, 8)}...</span>,
+              render: (a) => barbers[String(a.barber_id)] ?? `#${a.barber_id}`,
+            },
+            {
+              key: 'service',
+              header: 'Servico',
+              render: (a) => services[String(a.service_id)] ?? `#${a.service_id}`,
             },
             {
               key: 'actions',

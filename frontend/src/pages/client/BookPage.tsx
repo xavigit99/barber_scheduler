@@ -5,12 +5,14 @@ import Select from '../../components/Select';
 import Input from '../../components/Input';
 import Spinner from '../../components/Spinner';
 import { useToast } from '../../components/Toast';
+import { useAuth } from '../../contexts/AuthContext';
 import type { Barber, Service, AvailableSlot } from '../../types';
 
 type Step = 'barber' | 'service' | 'date' | 'slot' | 'confirm';
 
 export default function BookPage() {
   const { toast } = useToast();
+  const { clientId } = useAuth();
 
   const [step, setStep] = useState<Step>('barber');
   const [barbers, setBarbers] = useState<Barber[]>([]);
@@ -64,16 +66,13 @@ export default function BookPage() {
   }, [step, selectedBarber, selectedService, targetDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleConfirm() {
-    if (!selectedSlot) return;
+    if (!selectedSlot || !clientId) return;
     setSubmitting(true);
     try {
-      /* client_id will be resolved server-side from the auth token for client role,
-         but the API might require it — send empty string and let backend handle it.
-         For demo, we use a placeholder. The backend spec shows client_id is required. */
       await api.post('/appointments/', {
-        barber_id: selectedBarber,
-        client_id: '', /* backend should resolve from auth */
-        service_id: selectedService,
+        barber_id: Number(selectedBarber),
+        client_id: clientId,
+        service_id: Number(selectedService),
         data_inicio: selectedSlot.inicio,
       });
       toast('Agendamento confirmado!', 'success');
@@ -92,8 +91,18 @@ export default function BookPage() {
 
   if (loading) return <Spinner />;
 
-  const barberName = barbers.find((b) => b.id === selectedBarber)?.nome ?? '';
-  const serviceObj = services.find((s) => s.id === selectedService);
+  if (!clientId) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
+          Perfil de cliente nao encontrado. Contacta a barbearia para activar a tua conta.
+        </div>
+      </div>
+    );
+  }
+
+  const barberName = barbers.find((b) => String(b.id) === selectedBarber)?.nome ?? '';
+  const serviceObj = services.find((s) => String(s.id) === selectedService);
 
   /* Step indicator */
   const steps: { key: Step; label: string }[] = [
@@ -129,7 +138,7 @@ export default function BookPage() {
         <div className="space-y-4">
           <Select
             label="Escolha o barbeiro"
-            options={barbers.map((b) => ({ value: b.id, label: b.nome }))}
+            options={barbers.map((b) => ({ value: String(b.id), label: b.nome }))}
             value={selectedBarber}
             onChange={(e) => setSelectedBarber(e.target.value)}
             placeholder="Selecione..."
@@ -146,7 +155,7 @@ export default function BookPage() {
           <Select
             label="Escolha o servico"
             options={services.map((s) => ({
-              value: s.id,
+              value: String(s.id),
               label: `${s.nome} — ${s.duracao_minutos}min — ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(s.preco)}`,
             }))}
             value={selectedService}
@@ -256,7 +265,7 @@ export default function BookPage() {
           </div>
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => setStep('slot')}>Voltar</Button>
-            <Button onClick={handleConfirm} disabled={submitting}>
+            <Button onClick={handleConfirm} disabled={submitting || !clientId}>
               {submitting ? 'A agendar...' : 'Confirmar Agendamento'}
             </Button>
           </div>

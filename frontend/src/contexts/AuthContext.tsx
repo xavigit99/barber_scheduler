@@ -1,5 +1,5 @@
 /* ============================================================
-   AuthContext — provides user, tenantId, login/logout globally
+   AuthContext — provides user, tenantId, clientId, login/logout globally
    ============================================================ */
 
 import {
@@ -24,6 +24,7 @@ import type { User } from '../types';
 interface AuthState {
   user: User | null;
   tenantId: string | null;
+  clientId: number | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<User>;
   logout: () => void;
@@ -32,9 +33,22 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
+async function resolveClientProfile(userId: number | string): Promise<{ clientId: number; tenantId: string } | null> {
+  try {
+    const res = await api.get('/clients/me');
+    return {
+      clientId: res.data.id,
+      tenantId: String(res.data.tenant_id),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(getUser);
   const [tenantId, setTenantId] = useState<string | null>(getTenantId);
+  const [clientId, setClientId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   /* On mount, verify token is still valid */
@@ -46,19 +60,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     api
       .get('/auth/me')
-      .then((res) => setUser(res.data))
+      .then(async (res) => {
+        const u: User = res.data;
+        setUser(u);
+        if (u.role === 'client') {
+          const profile = await resolveClientProfile(u.id);
+          if (profile) {
+            setClientId(profile.clientId);
+            if (!getTenantId()) {
+              storeTenantId(profile.tenantId);
+              setTenantId(profile.tenantId);
+            }
+          }
+        }
+      })
       .catch(() => {
         clearAuth();
         setUser(null);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = useCallback(async (username: string, password: string): Promise<User> => {
     const res = await api.post('/auth/login', { username, password });
     const { access_token, user: userData } = res.data;
     saveAuth(access_token, userData);
     setUser(userData);
+
+    if (userData.role === 'client') {
+      const profile = await resolveClientProfile(userData.id);
+      if (profile) {
+        setClientId(profile.clientId);
+        storeTenantId(profile.tenantId);
+        setTenantId(profile.tenantId);
+      }
+    }
+
     return userData;
   }, []);
 
@@ -66,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearAuth();
     setUser(null);
     setTenantId(null);
+    setClientId(null);
   }, []);
 
   const selectTenant = useCallback((id: string) => {
@@ -74,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, tenantId, loading, login, logout, selectTenant }}>
+    <AuthContext.Provider value={{ user, tenantId, clientId, loading, login, logout, selectTenant }}>
       {children}
     </AuthContext.Provider>
   );

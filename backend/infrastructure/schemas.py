@@ -209,6 +209,8 @@ class ClientRegisterRequest(BaseModel):
     username: str
     email: str
     password: str = Field(min_length=8)
+    nome: str
+    tenant_id: int
 
 
 class BootstrapAdminRequest(BaseModel):
@@ -266,3 +268,32 @@ class PublicAppointmentResponse(BaseModel):
 ClienteCreate = ClientCreate
 ClienteUpdate = ClientUpdate
 ClienteResponse = ClientResponse
+
+
+class TenantStatsResponse(BaseModel):
+    barbers: int
+    clients: int
+    services: int
+    appointments_month: int
+    cancelled_month: int
+    revenue_month: float
+
+
+class PurgeRequest(BaseModel):
+    entity: str
+    older_than_days: int
+
+
+class PurgeResponse(BaseModel):
+    entity: str
+    purged_count: int
+
+
+class TenantExportResponse(BaseModel):
+    tenant_id: int
+    exported_at: str
+    barbers: list[dict]
+    clients: list[dict]
+    services: list[dict]
+    appointments: list[dict]
+    memberships: list[dict]

@@ -1,6 +1,7 @@
 from backend.application.commands.authenticate_user_command import AuthenticateUserCommand
 from backend.application.commands.bootstrap_admin_command import BootstrapAdminCommand
 from backend.application.commands.create_user_command import CreateUserCommand
+from backend.application.commands.register_client_command import RegisterClientCommand
 from backend.application.queries.get_user_query import GetUserQuery
 from backend.infrastructure.schemas import (
     AuthLoginRequest,
@@ -34,12 +35,13 @@ def build_create_user_command(payload: UserCreateRequest) -> CreateUserCommand:
     )
 
 
-def build_register_client_command(payload: ClientRegisterRequest) -> CreateUserCommand:
-    return CreateUserCommand(
+def build_register_client_command(payload: ClientRegisterRequest) -> RegisterClientCommand:
+    return RegisterClientCommand(
         username=payload.username,
         email=payload.email,
         password=payload.password,
-        role="client",
+        nome=payload.nome,
+        tenant_id=payload.tenant_id,
     )
 
 

@@ -7,8 +7,10 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const [nome, setNome] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [tenantId, setTenantId] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,6 +19,10 @@ export default function RegisterPage() {
   function validate(): boolean {
     const next: Record<string, string> = {};
 
+    if (nome.trim().length < 2) {
+      next.nome = 'Nome deve ter pelo menos 2 caracteres';
+    }
+
     if (username.trim().length < 2) {
       next.username = 'Nome de utilizador deve ter pelo menos 2 caracteres';
     }
@@ -24,6 +30,10 @@ export default function RegisterPage() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       next.email = 'Email invalido';
+    }
+
+    if (!tenantId || isNaN(Number(tenantId)) || Number(tenantId) < 1) {
+      next.tenantId = 'ID da barbearia invalido';
     }
 
     if (password.length < 8) {
@@ -44,7 +54,13 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await api.post('/auth/register', { username, email, password });
+      await api.post('/auth/register', {
+        nome,
+        username,
+        email,
+        password,
+        tenant_id: Number(tenantId),
+      });
       toast('Conta criada com sucesso!', 'success');
       navigate('/login', { replace: true });
     } catch (err: unknown) {
@@ -126,6 +142,26 @@ export default function RegisterPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Nome */}
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="reg-nome" className="text-sm font-medium text-slate-300">
+                  Nome completo
+                </label>
+                <input
+                  id="reg-nome"
+                  type="text"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  required
+                  autoFocus
+                  placeholder="Ex: Joao Silva"
+                  className={errors.nome ? inputErrorClasses : inputClasses}
+                />
+                {errors.nome && (
+                  <span className="text-xs text-red-400">{errors.nome}</span>
+                )}
+              </div>
+
               {/* Username */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="reg-username" className="text-sm font-medium text-slate-300">
@@ -137,7 +173,6 @@ export default function RegisterPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  autoFocus
                   placeholder="Ex: joao_silva"
                   className={errors.username ? inputErrorClasses : inputClasses}
                 />
@@ -162,6 +197,26 @@ export default function RegisterPage() {
                 />
                 {errors.email && (
                   <span className="text-xs text-red-400">{errors.email}</span>
+                )}
+              </div>
+
+              {/* Tenant ID */}
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="reg-tenant" className="text-sm font-medium text-slate-300">
+                  ID da Barbearia
+                </label>
+                <input
+                  id="reg-tenant"
+                  type="number"
+                  min="1"
+                  value={tenantId}
+                  onChange={(e) => setTenantId(e.target.value)}
+                  required
+                  placeholder="Fornecido pela barbearia"
+                  className={errors.tenantId ? inputErrorClasses : inputClasses}
+                />
+                {errors.tenantId && (
+                  <span className="text-xs text-red-400">{errors.tenantId}</span>
                 )}
               </div>
 

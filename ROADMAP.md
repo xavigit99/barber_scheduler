@@ -19,8 +19,9 @@
 | F5 | Superfícies Operacionais | ✅ Completo | — |
 | F6 | Produção e Operação | ✅ Completo | 12 Abr 2026 |
 | F7 | Post-MVP | ✅ Completo | 3 Mai 2026 |
-| F8 | Multi-Tenant Hardening | ⬜ Planeado | 17 Mai 2026 |
-| F9–F11 | Plataforma & Inovação | ⬜ Planeado | Q3 2026 |
+| F8 | Multi-Tenant Hardening | ✅ Completo | — |
+| F9 | Observabilidade, Auditoria & Compliance | ✅ Completo | — |
+| F10–F11 | Plataforma & Inovação | ⬜ Planeado | Q3 2026 |
 
 ---
 
@@ -106,25 +107,47 @@
 
 ---
 
-## F8 — Multi-Tenant Hardening ⬜ (Alvo: 17 Mai 2026)
+## F8 — Multi-Tenant Hardening ✅
 
-#### BL-041: Modelo de Memberships Multi-Barbershop
+#### BL-041: Modelo de Memberships Multi-Barbershop ✅
 - `BarbershopMembership` (barber_id, barbershop_id, role)
 - Um barbeiro pode pertencer a várias barbearias
 
-#### BL-042 + BL-043: Soft Delete Uniforme + RBAC Multi-Shop
+#### BL-042 + BL-043: Soft Delete Uniforme + RBAC Multi-Shop ✅
 - Auditar soft-delete em todos os recursos mutáveis
 - Guards que validam tenant ownership antes de qualquer ação mutável
 
-#### BL-044 + BL-045: Tenant-Aware Queries + Testes
+#### BL-044 + BL-045: Tenant-Aware Queries + Testes ✅
 - Propagar filtros tenant em todos os handlers e queries
 - Testes end-to-end de isolamento entre tenants
 
 ---
 
-## F9–F11 — Plataforma & Inovação ⬜ (Alvo: Q3 2026)
+## F9 — Observabilidade, Auditoria & Compliance ✅
 
-- **F9:** Observabilidade por tenant, auditoria de dados deletados, analytics, compliance
+#### BL-046: Audit Trail ✅
+- `GET /admin/audit?entity=barber&from_date=…&to_date=…`
+- Registos soft-deleted do tenant com filtros por data
+
+#### BL-047: Tenant Stats ✅
+- `GET /admin/stats`
+- Contagens e receita do tenant no mês corrente
+
+#### BL-048: Data Retention (purge) ✅
+- `DELETE /admin/purge` body: `{"entity": "barber", "older_than_days": 90}`
+- Hard-delete de registos antigos soft-deleted; retorna `purged_count`
+
+#### BL-049: Compliance Export (GDPR) ✅
+- `GET /admin/export`
+- JSON com todos os dados do tenant (activos + deleted) para GDPR/LGPD
+
+#### BL-050: Testes ✅
+- Testes unitários para todos os handlers F9 (audit, stats, purge, export)
+
+---
+
+## F10–F11 — Plataforma & Inovação ⬜ (Alvo: Q3 2026)
+
 - **F10:** API pública para parceiros, onboarding automatizado
 - **F11:** Painel de feedback, agenda multi-slot e recorrente, features avançadas
 
