@@ -242,6 +242,27 @@ class MembershipResponse(BaseModel):
     role: str
 
 
+class PublicAppointmentCreateRequest(BaseModel):
+    barber_id: int
+    service_id: int
+    start_at: datetime
+    tenant_id: int
+    client_name: str
+    client_email: str
+    client_phone: str | None = None
+
+
+class PublicAppointmentResponse(BaseModel):
+    id: int
+    barber_id: int
+    client_id: int
+    service_id: int
+    start_at: datetime
+    end_at: datetime
+    client_name: str
+    client_email: str
+
+
 ClienteCreate = ClientCreate
 ClienteUpdate = ClientUpdate
 ClienteResponse = ClientResponse

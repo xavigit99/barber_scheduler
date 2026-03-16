@@ -16,6 +16,8 @@ from backend.api.routes.barbershop_routes import router as barbershop_router
 from backend.api.routes.client_routes import router as client_router
 from backend.api.routes.health_routes import router as health_router
 from backend.api.routes.membership_routes import router as membership_router
+from backend.api.routes.public_routes import router as public_router
+from backend.api.routes.report_routes import router as report_router
 from backend.api.routes.service_routes import router as service_router
 from backend.core.logging_config import setup_logging
 from backend.infrastructure.database import Base, engine
@@ -68,5 +70,7 @@ app.include_router(client_router)
 app.include_router(service_router)
 app.include_router(availability_router)
 app.include_router(appointment_router)
+app.include_router(public_router)
+app.include_router(report_router)
 
 logger.info("Barber Scheduler API started", extra={"origins": _origins})

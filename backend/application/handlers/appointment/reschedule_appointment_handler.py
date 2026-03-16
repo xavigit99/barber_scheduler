@@ -80,4 +80,27 @@ class RescheduleAppointmentHandler(RequestHandler[RescheduleAppointmentCommand, 
         appointment.updated_at = datetime.now()
         self.db.commit()
         self.db.refresh(appointment)
+
+        # Best-effort reschedule notification
+        from backend.core.notifications import AppointmentNotification, get_notification_service
+
+        try:
+            from backend.core.barber import Barber
+            from backend.core.client import Client
+
+            client = self.db.query(Client).filter(Client.id == appointment.client_id).first()
+            barber = self.db.query(Barber).filter(Barber.id == appointment.barber_id).first()
+            get_notification_service().send_reschedule(
+                AppointmentNotification(
+                    client_name=client.nome if client else "",
+                    client_email=client.email if client else "",
+                    barber_name=barber.nome if barber else "",
+                    service_name=service.nome if service else "",
+                    start_at=start_at,
+                    appointment_id=appointment.id,
+                )
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
         return appointment

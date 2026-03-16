@@ -18,7 +18,7 @@
 | F4 | Appointments Core | ✅ Completo | — |
 | F5 | Superfícies Operacionais | ✅ Completo | — |
 | F6 | Produção e Operação | ✅ Completo | 12 Abr 2026 |
-| F7 | Post-MVP | ⬜ Planeado | 3 Mai 2026 |
+| F7 | Post-MVP | ✅ Completo | 3 Mai 2026 |
 | F8 | Multi-Tenant Hardening | ⬜ Planeado | 17 Mai 2026 |
 | F9–F11 | Plataforma & Inovação | ⬜ Planeado | Q3 2026 |
 
@@ -89,19 +89,20 @@
 
 ---
 
-## F7 — Post-MVP ⬜ (Alvo: 3 Mai 2026)
+## F7 — Post-MVP ✅ (Alvo: 3 Mai 2026)
 
-#### BL-036 + BL-037: Página Pública de Booking
-- `GET /public/barbershops/{id}/slots` — sem autenticação
-- `POST /public/appointments` — cria appointment como cliente
+#### BL-036 + BL-037: Página Pública de Booking ✅
+- `GET /public/barbershops/{id}/barbers/{barber_id}/slots` — sem autenticação
+- `POST /public/appointments` — cria appointment como cliente (find-or-create client by email)
 
-#### BL-038: Abstração de Notificações
-- Interface desacoplada para email/SMS/WhatsApp
-- Confirmação, cancelamento e remarcação
+#### BL-038: Abstração de Notificações ✅
+- Interface desacoplada para email/SMS/WhatsApp (`NotificationService` ABC)
+- `LogNotificationService` — implementação log-based para dev/staging
+- Confirmação, cancelamento e remarcação integrados nos handlers
 
-#### BL-040: Relatórios Operacionais Iniciais
-- `GET /admin/reports/daily` — appointments do dia por barbeiro
-- `GET /admin/reports/revenue` — faturação por período
+#### BL-040: Relatórios Operacionais Iniciais ✅
+- `GET /admin/reports/daily` — appointments do dia por barbeiro (admin-only)
+- `GET /admin/reports/revenue` — faturação por período com breakdown por serviço (admin-only)
 
 ---
 
