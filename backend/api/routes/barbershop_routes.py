@@ -48,9 +48,9 @@ async def list_barbershops(
     current_user=Depends(require_roles(ADMIN_ROLE)),
     x_tenant_id: int | None = Header(default=None, alias=TENANT_HEADER_ALIAS),
 ):
-    tenant_id = require_tenant_id(x_tenant_id)
+    # tenant_id is optional here — this is the tenant-selector page
     mediator = build_mediator(db)
-    return await mediator.send(build_list_barbershops_query(tenant_id=tenant_id))
+    return await mediator.send(build_list_barbershops_query(tenant_id=x_tenant_id))
 
 
 @router.get("/{barbershop_id}", response_model=BarbershopResponse)
