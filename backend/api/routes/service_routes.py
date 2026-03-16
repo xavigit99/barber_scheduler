@@ -13,7 +13,7 @@ from backend.api.service_http import (
     ensure_service_update_payload_has_changes,
 )
 from backend.api.tenant_header import TENANT_HEADER_ALIAS, require_tenant_id
-from backend.core.roles import ADMIN_ROLE
+from backend.core.roles import ADMIN_ROLE, CLIENT_ROLE
 from backend.infrastructure.database import get_db
 from backend.infrastructure.schemas import ServiceCreate, ServiceResponse, ServiceUpdate
 from meditor import build_mediator
@@ -36,7 +36,7 @@ async def create_service(
 @router.get("/", response_model=list[ServiceResponse])
 async def list_services(
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles(ADMIN_ROLE)),
+    current_user=Depends(require_roles(ADMIN_ROLE, CLIENT_ROLE)),
     tenant_id: int | None = Header(None, alias=TENANT_HEADER_ALIAS),
 ):
     mediator = build_mediator(db)
@@ -48,7 +48,7 @@ async def list_services(
 async def get_service(
     service_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles(ADMIN_ROLE)),
+    current_user=Depends(require_roles(ADMIN_ROLE, CLIENT_ROLE)),
     tenant_id: int | None = Header(None, alias=TENANT_HEADER_ALIAS),
 ):
     mediator = build_mediator(db)

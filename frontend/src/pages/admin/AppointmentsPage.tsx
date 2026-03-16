@@ -71,16 +71,22 @@ export default function AppointmentsPage() {
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     try {
-      await api.post('/appointments/', createForm);
+      await api.post('/appointments/', {
+        barber_id: Number(createForm.barber_id),
+        client_id: Number(createForm.client_id),
+        service_id: Number(createForm.service_id),
+        data_inicio: createForm.data_inicio,
+      });
       toast('Agendamento criado', 'success');
       setModalOpen(false);
-      /* reload */
-      if (createForm.barber_id === selectedBarber) {
-        const res = await api.get(`/appointments/barbers/${selectedBarber}?target_date=${targetDate}`);
-        setAppointments(Array.isArray(res.data) ? res.data : []);
-      }
-    } catch {
-      toast('Erro ao criar agendamento', 'error');
+      const res = await api.get(`/appointments/barbers/${selectedBarber}?target_date=${targetDate}`);
+      setAppointments(Array.isArray(res.data) ? res.data : []);
+    } catch (err: unknown) {
+      const detail =
+        typeof err === 'object' && err !== null && 'response' in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+          : null;
+      toast(detail ?? 'Erro ao criar agendamento', 'error');
     }
   }
 
@@ -95,14 +101,14 @@ export default function AppointmentsPage() {
     }
   }
 
-  function barberName(id: string): string {
-    return barbers.find((b) => b.id === id)?.nome ?? id;
+  function barberName(id: string | number): string {
+    return barbers.find((b) => String(b.id) === String(id))?.nome ?? String(id);
   }
-  function clientName(id: string): string {
-    return clients.find((c) => c.id === id)?.nome ?? id;
+  function clientName(id: string | number): string {
+    return clients.find((c) => String(c.id) === String(id))?.nome ?? String(id);
   }
-  function serviceName(id: string): string {
-    return services.find((s) => s.id === id)?.nome ?? id;
+  function serviceName(id: string | number): string {
+    return services.find((s) => String(s.id) === String(id))?.nome ?? String(id);
   }
 
   if (!tenantId) {

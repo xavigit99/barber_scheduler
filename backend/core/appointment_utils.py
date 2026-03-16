@@ -11,7 +11,9 @@ def ensure_within_availability_windows(
 ) -> None:
     start_time = start_at.time()
     end_time = end_at.time()
-    weekday = start_at.weekday()
+    # Python weekday(): 0=Monday, 1=Tuesday, ... 6=Sunday
+    # DB weekday: 1=Monday, 2=Tuesday, ... 7=Sunday (assuming 1-based convention)
+    weekday = start_at.weekday() + 1
 
     for window in availability_windows:
         if window.weekday != weekday:

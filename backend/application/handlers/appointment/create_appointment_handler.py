@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
@@ -14,6 +14,7 @@ from backend.core.barber_availability import BarberAvailability
 from backend.core.barber_block import BarberBlock
 from backend.core.client import Client
 from backend.core.exceptions import ConflictError, NotFoundError
+from backend.core.scheduling import ensure_valid_timezone, normalize_local_datetime
 from backend.core.service import Service
 from repositories.base_repository import BaseRepository
 
@@ -41,7 +42,10 @@ class CreateAppointmentHandler(RequestHandler[CreateAppointmentCommand, object])
         if service is None:
             raise NotFoundError("Service not found")
 
-        start_at = command.start_at
+        # Normalize start_at to local timezone (Europe/Lisbon) for availability check
+        # Database availability (Time) is stored as local time
+        timezone = ensure_valid_timezone("Europe/Lisbon")
+        start_at = normalize_local_datetime(command.start_at, timezone)
         end_at = start_at + timedelta(minutes=service.duracao_minutos)
 
         availability_windows = (

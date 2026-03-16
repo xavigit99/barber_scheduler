@@ -18,8 +18,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Upgrade schema."""
-    # 1. Add deleted_at to 7 existing tables
+    """Upgrade schema — idempotent via IF NOT EXISTS guards."""
+    conn = op.get_bind()
+
+    # 1. Add deleted_at to 7 existing tables (IF NOT EXISTS)
     for table in (
         "barbeiros",
         "clientes",
@@ -29,56 +31,43 @@ def upgrade() -> None:
         "barber_availabilities",
         "barber_blocks",
     ):
-        op.add_column(table, sa.Column("deleted_at", sa.DateTime(), nullable=True))
+        conn.execute(sa.text(
+            f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP"
+        ))
 
     # 2. Fix appointments.tenant_id — fill NULLs then enforce NOT NULL
-    # Guard: only backfill if there are tenants to assign to
-    op.execute(sa.text(
+    conn.execute(sa.text(
         "UPDATE appointments SET tenant_id = (SELECT id FROM tenants ORDER BY id LIMIT 1) "
         "WHERE tenant_id IS NULL AND (SELECT COUNT(*) FROM tenants) > 0"
     ))
     op.alter_column("appointments", "tenant_id", existing_type=sa.INTEGER(), nullable=False)
 
-    # 3. Create barbershop_memberships table
-    op.create_table(
-        "barbershop_memberships",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("barber_id", sa.Integer(), sa.ForeignKey("barbeiros.id"), nullable=False),
-        sa.Column("barbershop_id", sa.Integer(), sa.ForeignKey("barbershops.id"), nullable=False),
-        sa.Column("role", sa.String(), nullable=False),
-        sa.Column("tenant_id", sa.Integer(), sa.ForeignKey("tenants.id"), nullable=False),
-        sa.Column("deleted", sa.Boolean(), nullable=False, server_default="false"),
-        sa.Column("deleted_at", sa.DateTime(), nullable=True),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("barber_id", "barbershop_id", name="uq_membership_barber_barbershop"),
-    )
-    op.create_index(
-        op.f("ix_barbershop_memberships_tenant_id"),
-        "barbershop_memberships",
-        ["tenant_id"],
-        unique=False,
-    )
-    op.create_index(
-        op.f("ix_barbershop_memberships_id"), "barbershop_memberships", ["id"], unique=False
-    )
-    op.create_index(
-        op.f("ix_barbershop_memberships_barber_id"),
-        "barbershop_memberships",
-        ["barber_id"],
-        unique=False,
-    )
-    op.create_index(
-        op.f("ix_barbershop_memberships_barbershop_id"),
-        "barbershop_memberships",
-        ["barbershop_id"],
-        unique=False,
-    )
-    op.create_index(
-        op.f("ix_barbershop_memberships_deleted"),
-        "barbershop_memberships",
-        ["deleted"],
-        unique=False,
-    )
+    # 3. Create barbershop_memberships table (IF NOT EXISTS)
+    conn.execute(sa.text("""
+        CREATE TABLE IF NOT EXISTS barbershop_memberships (
+            id SERIAL NOT NULL,
+            barber_id INTEGER NOT NULL REFERENCES barbeiros(id),
+            barbershop_id INTEGER NOT NULL REFERENCES barbershops(id),
+            role VARCHAR NOT NULL,
+            tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+            deleted BOOLEAN NOT NULL DEFAULT false,
+            deleted_at TIMESTAMP,
+            PRIMARY KEY (id),
+            CONSTRAINT uq_membership_barber_barbershop UNIQUE (barber_id, barbershop_id)
+        )
+    """))
+
+    # 3b. Indexes (IF NOT EXISTS)
+    for idx, col in (
+        ("ix_barbershop_memberships_id", "id"),
+        ("ix_barbershop_memberships_barber_id", "barber_id"),
+        ("ix_barbershop_memberships_barbershop_id", "barbershop_id"),
+        ("ix_barbershop_memberships_tenant_id", "tenant_id"),
+        ("ix_barbershop_memberships_deleted", "deleted"),
+    ):
+        conn.execute(sa.text(
+            f"CREATE INDEX IF NOT EXISTS {idx} ON barbershop_memberships ({col})"
+        ))
 
 
 def downgrade() -> None:

@@ -4,15 +4,16 @@ import { useAuth } from '../contexts/AuthContext';
 interface NavItem {
   to: string;
   label: string;
+  requiresTenant?: boolean;
 }
 
 const adminLinks: NavItem[] = [
   { to: '/admin', label: 'Dashboard' },
   { to: '/admin/barbershops', label: 'Barbearias' },
-  { to: '/admin/barbers', label: 'Barbeiros' },
-  { to: '/admin/clients', label: 'Clientes' },
-  { to: '/admin/services', label: 'Servicos' },
-  { to: '/admin/appointments', label: 'Agendamentos' },
+  { to: '/admin/barbers', label: 'Barbeiros', requiresTenant: true },
+  { to: '/admin/clients', label: 'Clientes', requiresTenant: true },
+  { to: '/admin/services', label: 'Servicos', requiresTenant: true },
+  { to: '/admin/appointments', label: 'Agendamentos', requiresTenant: true },
 ];
 
 const barberLinks: NavItem[] = [
@@ -31,8 +32,10 @@ export default function Navbar() {
 
   if (!user) return null;
 
-  const links =
+  const allLinks =
     user.role === 'admin' ? adminLinks : user.role === 'barber' ? barberLinks : clientLinks;
+
+  const links = allLinks.filter((link) => !link.requiresTenant || tenantId);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -47,11 +50,15 @@ export default function Navbar() {
       </div>
 
       {/* tenant badge */}
-      {tenantId && (
+      {tenantId ? (
         <div className="px-5 py-2 text-xs text-slate-500 truncate border-b border-slate-800">
           Tenant: {String(tenantId).slice(0, 8)}...
         </div>
-      )}
+      ) : user.role === 'admin' ? (
+        <div className="px-5 py-2 text-xs text-amber-500 border-b border-slate-800">
+          Seleciona uma barbearia
+        </div>
+      ) : null}
 
       {/* nav links */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
