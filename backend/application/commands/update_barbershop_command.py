@@ -7,3 +7,4 @@ from diator.requests import Request
 class UpdateBarbershopCommand(Request):
     barbershop_id: int
     name: str | None = None
+    tenant_id: int | None = None

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Header, Response, status
 from sqlalchemy.orm import Session
 
 from backend.api.auth_dependencies import require_roles
@@ -13,6 +13,7 @@ from backend.api.barbershop_http import (
     ensure_barbershop_update_payload_has_changes,
 )
 from backend.api.error_http import to_http_exception
+from backend.api.tenant_header import TENANT_HEADER_ALIAS, require_tenant_id
 from backend.core.exceptions import NotFoundError
 from backend.core.roles import ADMIN_ROLE
 from backend.infrastructure.database import get_db
@@ -45,9 +46,11 @@ async def create_barbershop(
 async def list_barbershops(
     db: Session = Depends(get_db),
     current_user=Depends(require_roles(ADMIN_ROLE)),
+    x_tenant_id: int | None = Header(default=None, alias=TENANT_HEADER_ALIAS),
 ):
+    tenant_id = require_tenant_id(x_tenant_id)
     mediator = build_mediator(db)
-    return await mediator.send(build_list_barbershops_query())
+    return await mediator.send(build_list_barbershops_query(tenant_id=tenant_id))
 
 
 @router.get("/{barbershop_id}", response_model=BarbershopResponse)
@@ -55,9 +58,11 @@ async def get_barbershop(
     barbershop_id: int,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles(ADMIN_ROLE)),
+    x_tenant_id: int | None = Header(default=None, alias=TENANT_HEADER_ALIAS),
 ):
+    tenant_id = require_tenant_id(x_tenant_id)
     mediator = build_mediator(db)
-    barbershop = await mediator.send(build_get_barbershop_query(barbershop_id))
+    barbershop = await mediator.send(build_get_barbershop_query(barbershop_id, tenant_id=tenant_id))
     return ensure_barbershop_found(barbershop)
 
 
@@ -67,9 +72,13 @@ async def replace_barbershop(
     payload: BarbershopCreate,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles(ADMIN_ROLE)),
+    x_tenant_id: int | None = Header(default=None, alias=TENANT_HEADER_ALIAS),
 ):
+    tenant_id = require_tenant_id(x_tenant_id)
     mediator = build_mediator(db)
-    barbershop = await mediator.send(build_update_barbershop_command(barbershop_id, payload))
+    barbershop = await mediator.send(
+        build_update_barbershop_command(barbershop_id, payload, tenant_id=tenant_id)
+    )
     return ensure_barbershop_found(barbershop)
 
 
@@ -79,10 +88,14 @@ async def update_barbershop(
     payload: BarbershopUpdate,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles(ADMIN_ROLE)),
+    x_tenant_id: int | None = Header(default=None, alias=TENANT_HEADER_ALIAS),
 ):
+    tenant_id = require_tenant_id(x_tenant_id)
     payload = ensure_barbershop_update_payload_has_changes(payload)
     mediator = build_mediator(db)
-    barbershop = await mediator.send(build_update_barbershop_command(barbershop_id, payload))
+    barbershop = await mediator.send(
+        build_update_barbershop_command(barbershop_id, payload, tenant_id=tenant_id)
+    )
     return ensure_barbershop_found(barbershop)
 
 
@@ -91,8 +104,10 @@ async def delete_barbershop(
     barbershop_id: int,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles(ADMIN_ROLE)),
+    x_tenant_id: int | None = Header(default=None, alias=TENANT_HEADER_ALIAS),
 ):
+    tenant_id = require_tenant_id(x_tenant_id)
     mediator = build_mediator(db)
-    deleted = await mediator.send(build_delete_barbershop_command(barbershop_id))
+    deleted = await mediator.send(build_delete_barbershop_command(barbershop_id, tenant_id=tenant_id))
     ensure_barbershop_deleted(deleted)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

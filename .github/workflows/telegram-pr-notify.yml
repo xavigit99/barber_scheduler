@@ -2,7 +2,7 @@ name: Telegram PR Notification
 
 on:
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, synchronize]
 
 jobs:
   notify:
@@ -10,6 +10,7 @@ jobs:
     steps:
       - name: Send Telegram message
         env:
+          EVENT: ${{ github.event.action }}
           TITLE: ${{ github.event.pull_request.title }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
           HEAD: ${{ github.event.pull_request.head.ref }}
@@ -18,7 +19,12 @@ jobs:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          TEXT="$(printf '🔔 <b>Novo PR aberto</b>\n\n📌 %s\n👤 Por: %s\n🌿 %s → %s\n🔗 %s' "$TITLE" "$AUTHOR" "$HEAD" "$BASE" "$URL")"
+          if [ "$EVENT" = "synchronize" ]; then
+            LABEL="🔄 PR atualizado"
+          else
+            LABEL="🔔 Novo PR aberto"
+          fi
+          TEXT="$(printf '%s\n\n📌 %s\n👤 Por: %s\n🌿 %s → %s\n🔗 %s' "$LABEL" "$TITLE" "$AUTHOR" "$HEAD" "$BASE" "$URL")"
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             -d chat_id="${CHAT_ID}" \
             -d parse_mode="HTML" \

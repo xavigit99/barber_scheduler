@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
 
 
@@ -51,6 +53,8 @@ class BaseRepository[T]:
 
         if hasattr(obj, "deleted"):
             setattr(obj, "deleted", True)
+            if hasattr(obj, "deleted_at"):
+                setattr(obj, "deleted_at", datetime.now(UTC))
             self.db.commit()
             return True
 

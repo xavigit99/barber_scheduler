@@ -4,6 +4,7 @@ from diator.requests import Request
 
 
 @dataclass(frozen=True)
-class DeleteBarbershopCommand(Request):
+class DeleteMembershipCommand(Request):
+    membership_id: int
     barbershop_id: int
-    tenant_id: int | None = None
+    tenant_id: int

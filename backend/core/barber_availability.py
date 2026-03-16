@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, CheckConstraint, Column, ForeignKey, Integer, Time
+from sqlalchemy import Boolean, CheckConstraint, Column, DateTime, ForeignKey, Integer, Time
 
 from backend.infrastructure.database import Base
 
@@ -15,3 +15,4 @@ class BarberAvailability(Base):
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
     deleted = Column(Boolean, nullable=False, default=False, index=True)
+    deleted_at = Column(DateTime, nullable=True)

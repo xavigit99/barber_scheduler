@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
 
 from backend.infrastructure.database import Base
 
@@ -12,3 +12,4 @@ class Service(Base):
     preco = Column(Float, nullable=False)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
     deleted = Column(Boolean, nullable=False, default=False, index=True)
+    deleted_at = Column(DateTime, nullable=True)

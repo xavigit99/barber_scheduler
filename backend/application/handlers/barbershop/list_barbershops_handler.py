@@ -9,7 +9,7 @@ from repositories.base_repository import BaseRepository
 class ListBarbershopsHandler(RequestHandler[ListBarbershopsQuery, list]):
 
     def __init__(self, db: Session):
-        self.repository = BaseRepository(Barbershop, db)
+        self.db = db
 
     async def handle(self, query: ListBarbershopsQuery) -> list:
-        return self.repository.list()
+        return BaseRepository(Barbershop, self.db, tenant_id=query.tenant_id).list()

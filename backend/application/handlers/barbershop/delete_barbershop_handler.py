@@ -9,7 +9,7 @@ from repositories.base_repository import BaseRepository
 class DeleteBarbershopHandler(RequestHandler[DeleteBarbershopCommand, bool]):
 
     def __init__(self, db: Session):
-        self.repository = BaseRepository(Barbershop, db)
+        self.db = db
 
     async def handle(self, command: DeleteBarbershopCommand) -> bool:
-        return self.repository.delete(command.barbershop_id)
+        return BaseRepository(Barbershop, self.db, tenant_id=command.tenant_id).delete(command.barbershop_id)

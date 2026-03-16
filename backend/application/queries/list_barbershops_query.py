@@ -5,4 +5,4 @@ from diator.requests import Request
 
 @dataclass(frozen=True)
 class ListBarbershopsQuery(Request):
-    pass
+    tenant_id: int | None = None

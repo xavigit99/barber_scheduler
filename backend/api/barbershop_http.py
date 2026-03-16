@@ -22,25 +22,36 @@ def build_create_barbershop_command(
     )
 
 
-def build_delete_barbershop_command(barbershop_id: int) -> DeleteBarbershopCommand:
-    return DeleteBarbershopCommand(barbershop_id=barbershop_id)
+def build_delete_barbershop_command(
+    barbershop_id: int,
+    *,
+    tenant_id: int | None = None,
+) -> DeleteBarbershopCommand:
+    return DeleteBarbershopCommand(barbershop_id=barbershop_id, tenant_id=tenant_id)
 
 
-def build_get_barbershop_query(barbershop_id: int) -> GetBarbershopQuery:
-    return GetBarbershopQuery(barbershop_id=barbershop_id)
+def build_get_barbershop_query(
+    barbershop_id: int,
+    *,
+    tenant_id: int | None = None,
+) -> GetBarbershopQuery:
+    return GetBarbershopQuery(barbershop_id=barbershop_id, tenant_id=tenant_id)
 
 
-def build_list_barbershops_query() -> ListBarbershopsQuery:
-    return ListBarbershopsQuery()
+def build_list_barbershops_query(*, tenant_id: int | None = None) -> ListBarbershopsQuery:
+    return ListBarbershopsQuery(tenant_id=tenant_id)
 
 
 def build_update_barbershop_command(
     barbershop_id: int,
     payload: BarbershopCreate | BarbershopUpdate,
+    *,
+    tenant_id: int | None = None,
 ) -> UpdateBarbershopCommand:
     return UpdateBarbershopCommand(
         barbershop_id=barbershop_id,
         name=payload.nome,
+        tenant_id=tenant_id,
     )
 
 

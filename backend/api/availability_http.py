@@ -27,12 +27,15 @@ from backend.infrastructure.schemas import (
 def build_create_barber_availability_command(
     barber_id: int,
     payload: BarberAvailabilityCreate,
+    *,
+    tenant_id: int | None = None,
 ) -> CreateBarberAvailabilityCommand:
     return CreateBarberAvailabilityCommand(
         barber_id=barber_id,
         weekday=payload.dia_semana,
         start_time=payload.hora_inicio,
         end_time=payload.hora_fim,
+        tenant_id=tenant_id,
     )
 
 
@@ -40,6 +43,8 @@ def build_update_barber_availability_command(
     barber_id: int,
     availability_id: int,
     payload: BarberAvailabilityUpdate,
+    *,
+    tenant_id: int | None = None,
 ) -> UpdateBarberAvailabilityCommand:
     return UpdateBarberAvailabilityCommand(
         barber_id=barber_id,
@@ -47,26 +52,36 @@ def build_update_barber_availability_command(
         weekday=payload.dia_semana,
         start_time=payload.hora_inicio,
         end_time=payload.hora_fim,
+        tenant_id=tenant_id,
     )
 
 
 def build_delete_barber_availability_command(
     barber_id: int,
     availability_id: int,
+    *,
+    tenant_id: int | None = None,
 ) -> DeleteBarberAvailabilityCommand:
     return DeleteBarberAvailabilityCommand(
         barber_id=barber_id,
         availability_id=availability_id,
+        tenant_id=tenant_id,
     )
 
 
-def build_list_barber_availabilities_query(barber_id: int) -> ListBarberAvailabilitiesQuery:
-    return ListBarberAvailabilitiesQuery(barber_id=barber_id)
+def build_list_barber_availabilities_query(
+    barber_id: int,
+    *,
+    tenant_id: int | None = None,
+) -> ListBarberAvailabilitiesQuery:
+    return ListBarberAvailabilitiesQuery(barber_id=barber_id, tenant_id=tenant_id)
 
 
 def build_create_barber_block_command(
     barber_id: int,
     payload: BarberBlockCreate,
+    *,
+    tenant_id: int | None = None,
 ) -> CreateBarberBlockCommand:
     return CreateBarberBlockCommand(
         barber_id=barber_id,
@@ -74,21 +89,29 @@ def build_create_barber_block_command(
         start_at=payload.inicio,
         end_at=payload.fim,
         reason=payload.motivo,
+        tenant_id=tenant_id,
     )
 
 
 def build_delete_barber_block_command(
     barber_id: int,
     block_id: int,
+    *,
+    tenant_id: int | None = None,
 ) -> DeleteBarberBlockCommand:
     return DeleteBarberBlockCommand(
         barber_id=barber_id,
         block_id=block_id,
+        tenant_id=tenant_id,
     )
 
 
-def build_list_barber_blocks_query(barber_id: int) -> ListBarberBlocksQuery:
-    return ListBarberBlocksQuery(barber_id=barber_id)
+def build_list_barber_blocks_query(
+    barber_id: int,
+    *,
+    tenant_id: int | None = None,
+) -> ListBarberBlocksQuery:
+    return ListBarberBlocksQuery(barber_id=barber_id, tenant_id=tenant_id)
 
 
 def build_get_available_slots_query(

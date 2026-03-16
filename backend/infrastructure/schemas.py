@@ -228,6 +228,20 @@ class AuthTokenResponse(BaseModel):
     user: UserResponse
 
 
+class MembershipCreate(BaseModel):
+    barber_id: int
+    role: str
+
+
+class MembershipResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    barber_id: int
+    barbershop_id: int
+    role: str
+
+
 class PublicAppointmentCreateRequest(BaseModel):
     barber_id: int
     service_id: int

@@ -11,3 +11,4 @@ class CreateBarberBlockCommand(Request):
     start_at: datetime
     end_at: datetime
     reason: str | None = None
+    tenant_id: int | None = None

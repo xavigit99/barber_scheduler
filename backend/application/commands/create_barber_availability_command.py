@@ -10,3 +10,4 @@ class CreateBarberAvailabilityCommand(Request):
     weekday: int
     start_time: time
     end_time: time
+    tenant_id: int | None = None
