@@ -66,7 +66,7 @@ class AppointmentHandlersTestCase(unittest.IsolatedAsyncioTestCase):
         )
         availability_query.filter.return_value = availability_query
         availability_query.all.return_value = [
-            SimpleNamespace(weekday=0, start_time=time(9, 0), end_time=time(17, 0))
+            SimpleNamespace(weekday=1, start_time=time(9, 0), end_time=time(17, 0))
         ]
         block_query.filter.return_value = block_query
         block_query.all.return_value = []
@@ -116,7 +116,7 @@ class AppointmentHandlersTestCase(unittest.IsolatedAsyncioTestCase):
         )
         availability_query.filter.return_value = availability_query
         availability_query.all.return_value = [
-            SimpleNamespace(weekday=0, start_time=time(9, 0), end_time=time(17, 0))
+            SimpleNamespace(weekday=1, start_time=time(9, 0), end_time=time(17, 0))
         ]
         block_query.filter.return_value = block_query
         block_query.all.return_value = []
@@ -167,7 +167,7 @@ class AppointmentHandlersTestCase(unittest.IsolatedAsyncioTestCase):
         )
         availability_query.filter.return_value = availability_query
         availability_query.all.return_value = [
-            SimpleNamespace(weekday=0, start_time=time(9, 0), end_time=time(17, 0))
+            SimpleNamespace(weekday=1, start_time=time(9, 0), end_time=time(17, 0))
         ]
         block_query.filter.return_value = block_query
         block_query.all.return_value = []

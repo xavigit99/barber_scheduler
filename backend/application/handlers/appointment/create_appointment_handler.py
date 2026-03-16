@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
