@@ -48,7 +48,7 @@ class MigrationSchemaSyncTestCase(unittest.TestCase):
 
     def test_no_pending_migrations(self):
         """alembic check should report no new upgrade operations."""
-        from alembic import command
+        from alembic import command  # noqa: I001
         from alembic.config import Config
 
         cfg = Config("alembic.ini")
