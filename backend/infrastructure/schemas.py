@@ -1,7 +1,7 @@
 from datetime import date, datetime, time
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from backend.core.roles import ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE
 
@@ -249,9 +249,9 @@ class PublicAppointmentCreateRequest(BaseModel):
     service_id: int
     start_at: datetime
     tenant_id: int
-    client_name: str
-    client_email: str
-    client_phone: str | None = None
+    client_name: str = Field(min_length=1, max_length=200)
+    client_email: EmailStr
+    client_phone: str | None = Field(default=None, max_length=30)
 
 
 class PublicAppointmentResponse(BaseModel):

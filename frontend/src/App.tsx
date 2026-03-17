@@ -19,6 +19,8 @@ import SchedulePage from './pages/barber/SchedulePage';
 import BlocksPage from './pages/barber/BlocksPage';
 import BookPage from './pages/client/BookPage';
 import MyAppointmentsPage from './pages/client/MyAppointmentsPage';
+import MyFeedbackPage from './pages/client/MyFeedbackPage';
+import PublicBookPage from './pages/public/PublicBookPage';
 
 /* Root redirect — sends user to role-appropriate home */
 function RootRedirect() {
@@ -39,6 +41,7 @@ export default function App() {
             {/* Public */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/book/:tenantId" element={<PublicBookPage />} />
 
             {/* Root */}
             <Route path="/" element={<RootRedirect />} />
@@ -64,6 +67,7 @@ export default function App() {
             <Route element={<ProtectedRoute allowedRoles={['client']} />}>
               <Route path="/client" element={<BookPage />} />
               <Route path="/client/appointments" element={<MyAppointmentsPage />} />
+              <Route path="/client/feedback" element={<MyFeedbackPage />} />
             </Route>
 
             {/* Catch-all */}

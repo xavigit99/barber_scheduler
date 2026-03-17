@@ -81,3 +81,22 @@ export interface AvailableSlot {
   inicio: string;
   fim: string;
 }
+
+export interface PublicFeedback {
+  id: string;
+  barber_id: string;
+  rating: number;
+  comentario: string | null;
+  created_at: string;
+}
+
+export interface Feedback {
+  id: string;
+  appointment_id: string;
+  client_id: string;
+  barber_id: string;
+  tenant_id: string;
+  rating: number;
+  comentario: string | null;
+  created_at: string;
+}
