@@ -1,4 +1,4 @@
-from datetime import UTC, timedelta
+from datetime import UTC, datetime, timedelta
 
 from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
@@ -104,6 +104,7 @@ class PublicCreateAppointmentHandler(RequestHandler[PublicCreateAppointmentComma
         if conflicts:
             raise ConflictError("Time slot already booked")
 
+        now = datetime.now(UTC)
         appt = repo_appt.create({
             "barber_id": command.barber_id,
             "client_id": client.id,
@@ -111,6 +112,8 @@ class PublicCreateAppointmentHandler(RequestHandler[PublicCreateAppointmentComma
             "start_at": command.start_at,
             "end_at": end_at,
             "tenant_id": command.tenant_id,
+            "created_at": now,
+            "updated_at": now,
         })
 
         # Notify client

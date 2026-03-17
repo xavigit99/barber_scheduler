@@ -33,7 +33,7 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
-async function resolveClientProfile(userId: number | string): Promise<{ clientId: number; tenantId: string } | null> {
+async function resolveClientProfile(_userId: number | string): Promise<{ clientId: number; tenantId: string } | null> {
   try {
     const res = await api.get('/clients/me');
     return {
