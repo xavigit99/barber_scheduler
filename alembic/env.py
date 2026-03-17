@@ -6,6 +6,7 @@ so that autogenerate can detect schema changes.
 
 import os
 from logging.config import fileConfig
+from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
@@ -15,7 +16,7 @@ from alembic import context
 # ---------------------------------------------------------------------------
 # Load environment variables from .env (project root)
 # ---------------------------------------------------------------------------
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 DATABASE_URL: str = os.environ["DATABASE_URL"]
 
