@@ -147,7 +147,7 @@ export default function PublicBookPage() {
             Receberás uma confirmação em <span className="text-white">{clientEmail}</span>.
           </p>
           <Link
-            to={`/register?tenant=${tenantId}`}
+            to={`/join/${tenantId}`}
             className="block w-full rounded-xl border border-amber-500/50 py-3 text-amber-400 font-medium hover:bg-amber-500/10 transition-colors"
           >
             Criar conta para gerir agendamentos

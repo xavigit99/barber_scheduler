@@ -21,6 +21,7 @@ import BookPage from './pages/client/BookPage';
 import MyAppointmentsPage from './pages/client/MyAppointmentsPage';
 import MyFeedbackPage from './pages/client/MyFeedbackPage';
 import PublicBookPage from './pages/public/PublicBookPage';
+import ClientRegisterPage from './pages/public/ClientRegisterPage';
 
 /* Root redirect — sends user to role-appropriate home */
 function RootRedirect() {
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/book/:tenantId" element={<PublicBookPage />} />
+            <Route path="/join/:tenantId" element={<ClientRegisterPage />} />
 
             {/* Root */}
             <Route path="/" element={<RootRedirect />} />
