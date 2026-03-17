@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
@@ -26,6 +28,7 @@ class CancelAppointmentHandler(RequestHandler[CancelAppointmentCommand, bool]):
             return False
 
         appointment.deleted = True
+        appointment.deleted_at = datetime.now(UTC)
         self.db.commit()
 
         # Best-effort cancellation notification
