@@ -297,3 +297,22 @@ class TenantExportResponse(BaseModel):
     services: list[dict]
     appointments: list[dict]
     memberships: list[dict]
+
+
+class FeedbackCreate(BaseModel):
+    appointment_id: int
+    rating: int = Field(ge=1, le=5)
+    comentario: str | None = None
+
+
+class FeedbackResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    appointment_id: int
+    client_id: int
+    barber_id: int
+    tenant_id: int
+    rating: int
+    comentario: str | None
+    created_at: datetime

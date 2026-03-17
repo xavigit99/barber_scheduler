@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from backend.core.exceptions import (
     AuthenticationError,
     ConflictError,
+    ForbiddenError,
     NotFoundError,
     ValidationError,
 )
@@ -12,6 +13,12 @@ def to_http_exception(exc: Exception) -> HTTPException:
     if isinstance(exc, AuthenticationError):
         return HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+        )
+
+    if isinstance(exc, ForbiddenError):
+        return HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
             detail=str(exc),
         )
 

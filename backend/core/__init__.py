@@ -5,6 +5,7 @@ from backend.core.barber_block import BarberBlock
 from backend.core.barbershop import Barbershop
 from backend.core.barbershop_membership import BarbershopMembership
 from backend.core.client import Client
+from backend.core.feedback import Feedback
 from backend.core.membership_roles import (
     ALLOWED_MEMBERSHIP_ROLES,
     MEMBERSHIP_MEMBER,
@@ -28,6 +29,7 @@ __all__ = [
     "BARBER_ROLE",
     "BarberAvailability",
     "Appointment",
+    "Feedback",
     "BarberBlock",
     "BarbershopMembership",
     "CLIENT_ROLE",
