@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Header, Response, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from backend.api.auth_dependencies import require_roles
@@ -13,12 +13,25 @@ from backend.api.barber_http import (
     ensure_barber_update_payload_has_changes,
 )
 from backend.api.tenant_header import TENANT_HEADER_ALIAS, require_tenant_id
-from backend.core.roles import ADMIN_ROLE, CLIENT_ROLE
+from backend.core.barber import Barber
+from backend.core.roles import ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE
 from backend.infrastructure.database import get_db
 from backend.infrastructure.schemas import BarberCreate, BarberResponse, BarberUpdate
 from meditor import build_mediator
 
 router = APIRouter(prefix="/barbers", tags=["Barbers"])
+
+
+@router.get("/me", response_model=BarberResponse)
+async def get_my_barber(
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles(BARBER_ROLE)),
+):
+    user_id = current_user.get("id") if isinstance(current_user, dict) else getattr(current_user, "id", None)
+    barber = db.query(Barber).filter(Barber.user_id == user_id, Barber.deleted.is_(False)).first()
+    if barber is None:
+        raise HTTPException(status_code=404, detail="Barber profile not found")
+    return barber
 
 
 @router.post("/", response_model=BarberResponse, status_code=status.HTTP_201_CREATED)

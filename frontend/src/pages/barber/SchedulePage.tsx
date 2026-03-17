@@ -3,29 +3,20 @@ import api from '../../lib/api';
 import Input from '../../components/Input';
 import Table from '../../components/Table';
 import Spinner from '../../components/Spinner';
-import Button from '../../components/Button';
 import { useToast } from '../../components/Toast';
+import { useAuth } from '../../contexts/AuthContext';
 import type { Appointment, Client, Service } from '../../types';
-
-const BARBER_ID_KEY = 'barber_my_barber_id';
 
 export default function SchedulePage() {
   const { toast } = useToast();
-  const [barberId, setBarberId] = useState(() => localStorage.getItem(BARBER_ID_KEY) ?? '');
-  const [savedBarberId, setSavedBarberId] = useState(() => localStorage.getItem(BARBER_ID_KEY) ?? '');
+  const { barberId } = useAuth();
   const [targetDate, setTargetDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [clients, setClients] = useState<Record<string, string>>({});
   const [services, setServices] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  function saveBarberId() {
-    localStorage.setItem(BARBER_ID_KEY, barberId);
-    setSavedBarberId(barberId);
-    toast('Barber ID guardado', 'success');
-  }
-
-  /* Load client and service maps once */
+  /* Load client and service name maps once */
   useEffect(() => {
     Promise.all([api.get('/clients/'), api.get('/services/')])
       .then(([cRes, sRes]) => {
@@ -40,59 +31,30 @@ export default function SchedulePage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!savedBarberId || !targetDate) return;
+    if (!barberId || !targetDate) return;
     setLoading(true);
     api
-      .get(`/appointments/barbers/${savedBarberId}?target_date=${targetDate}`)
+      .get(`/appointments/barbers/${barberId}?target_date=${targetDate}`)
       .then((res) => setAppointments(Array.isArray(res.data) ? res.data : []))
       .catch(() => {
         toast('Erro ao carregar agenda', 'error');
         setAppointments([]);
       })
       .finally(() => setLoading(false));
-  }, [savedBarberId, targetDate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [barberId, targetDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!savedBarberId) {
-    return (
-      <div className="mx-auto max-w-md py-12">
-        <h1 className="mb-4 text-2xl font-semibold text-slate-800">Minha Agenda</h1>
-        <p className="mb-4 text-sm text-slate-500">
-          Introduza o seu Barber ID para ver a sua agenda.
-        </p>
-        <div className="flex gap-2">
-          <Input
-            value={barberId}
-            onChange={(e) => setBarberId(e.target.value)}
-            placeholder="Barber ID"
-            className="flex-1"
-          />
-          <Button onClick={saveBarberId} disabled={!barberId}>Guardar</Button>
-        </div>
-      </div>
-    );
-  }
+  if (!barberId) return <Spinner />;
 
   return (
     <div>
       <h1 className="mb-6 text-2xl font-semibold text-slate-800">Minha Agenda</h1>
-      <div className="mb-4 flex items-end gap-4">
+      <div className="mb-4">
         <Input
           label="Data"
           type="date"
           value={targetDate}
           onChange={(e) => setTargetDate(e.target.value)}
         />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            localStorage.removeItem(BARBER_ID_KEY);
-            setSavedBarberId('');
-            setBarberId('');
-          }}
-        >
-          Alterar Barber ID
-        </Button>
       </div>
 
       {loading ? (
@@ -102,7 +64,7 @@ export default function SchedulePage() {
           columns={[
             {
               key: 'start',
-              header: 'Inicio',
+              header: 'Início',
               render: (a) =>
                 new Date(a.start_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
             },

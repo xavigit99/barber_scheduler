@@ -1,5 +1,5 @@
 /* ============================================================
-   AuthContext — provides user, tenantId, clientId, login/logout globally
+   AuthContext — provides user, tenantId, clientId, barberId, login/logout globally
    ============================================================ */
 
 import {
@@ -25,6 +25,7 @@ interface AuthState {
   user: User | null;
   tenantId: string | null;
   clientId: number | null;
+  barberId: number | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<User>;
   logout: () => void;
@@ -33,13 +34,19 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
-async function resolveClientProfile(_userId: number | string): Promise<{ clientId: number; tenantId: string } | null> {
+async function resolveClientProfile(): Promise<{ clientId: number; tenantId: string } | null> {
   try {
     const res = await api.get('/clients/me');
-    return {
-      clientId: res.data.id,
-      tenantId: String(res.data.tenant_id),
-    };
+    return { clientId: res.data.id, tenantId: String(res.data.tenant_id) };
+  } catch {
+    return null;
+  }
+}
+
+async function resolveBarberProfile(): Promise<{ barberId: number; tenantId: string } | null> {
+  try {
+    const res = await api.get('/barbers/me');
+    return { barberId: res.data.id, tenantId: String(res.data.tenant_id) };
   } catch {
     return null;
   }
@@ -49,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(getUser);
   const [tenantId, setTenantId] = useState<string | null>(getTenantId);
   const [clientId, setClientId] = useState<number | null>(null);
+  const [barberId, setBarberId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   /* On mount, verify token is still valid */
@@ -64,9 +72,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const u: User = res.data;
         setUser(u);
         if (u.role === 'client') {
-          const profile = await resolveClientProfile(u.id);
+          const profile = await resolveClientProfile();
           if (profile) {
             setClientId(profile.clientId);
+            if (!getTenantId()) {
+              storeTenantId(profile.tenantId);
+              setTenantId(profile.tenantId);
+            }
+          }
+        } else if (u.role === 'barber') {
+          const profile = await resolveBarberProfile();
+          if (profile) {
+            setBarberId(profile.barberId);
             if (!getTenantId()) {
               storeTenantId(profile.tenantId);
               setTenantId(profile.tenantId);
@@ -88,9 +105,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
 
     if (userData.role === 'client') {
-      const profile = await resolveClientProfile(userData.id);
+      const profile = await resolveClientProfile();
       if (profile) {
         setClientId(profile.clientId);
+        storeTenantId(profile.tenantId);
+        setTenantId(profile.tenantId);
+      }
+    } else if (userData.role === 'barber') {
+      const profile = await resolveBarberProfile();
+      if (profile) {
+        setBarberId(profile.barberId);
         storeTenantId(profile.tenantId);
         setTenantId(profile.tenantId);
       }
@@ -104,6 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setTenantId(null);
     setClientId(null);
+    setBarberId(null);
   }, []);
 
   const selectTenant = useCallback((id: string) => {
@@ -112,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, tenantId, clientId, loading, login, logout, selectTenant }}>
+    <AuthContext.Provider value={{ user, tenantId, clientId, barberId, loading, login, logout, selectTenant }}>
       {children}
     </AuthContext.Provider>
   );

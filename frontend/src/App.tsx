@@ -17,6 +17,7 @@ import ServicesPage from './pages/admin/ServicesPage';
 import AppointmentsPage from './pages/admin/AppointmentsPage';
 import ReportsPage from './pages/admin/ReportsPage';
 import CompliancePage from './pages/admin/CompliancePage';
+import AdminFeedbackPage from './pages/admin/AdminFeedbackPage';
 import SchedulePage from './pages/barber/SchedulePage';
 import BlocksPage from './pages/barber/BlocksPage';
 import AvailabilityPage from './pages/barber/AvailabilityPage';
@@ -67,6 +68,7 @@ export default function App() {
               <Route path="/admin/appointments" element={<AppointmentsPage />} />
               <Route path="/admin/reports" element={<ReportsPage />} />
               <Route path="/admin/compliance" element={<CompliancePage />} />
+              <Route path="/admin/feedback" element={<AdminFeedbackPage />} />
             </Route>
 
             {/* Barber routes */}
