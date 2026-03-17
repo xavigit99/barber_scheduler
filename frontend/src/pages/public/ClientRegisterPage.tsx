@@ -165,7 +165,7 @@ export default function ClientRegisterPage() {
         <div className="mt-6 text-center space-y-3">
           <p className="text-sm text-slate-400">
             Já tens conta?{' '}
-            <Link to="/login" className="text-amber-400 font-medium hover:text-amber-300">
+            <Link to={`/signin/${tenantId}`} className="text-amber-400 font-medium hover:text-amber-300">
               Inicia sessão
             </Link>
           </p>

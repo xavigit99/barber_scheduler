@@ -185,7 +185,7 @@ export default function PublicBookPage() {
             <span className="text-white font-semibold text-lg">BarberPro</span>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <Link to="/login" className="text-slate-400 hover:text-white transition-colors">Entrar</Link>
+            <Link to={`/signin/${tenantId}`} className="text-slate-400 hover:text-white transition-colors">Entrar</Link>
             <Link
               to={`/join/${tenantId}`}
               className="rounded-lg bg-amber-500 px-3 py-1.5 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
