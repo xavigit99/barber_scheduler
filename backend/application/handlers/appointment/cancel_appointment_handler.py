@@ -31,6 +31,19 @@ class CancelAppointmentHandler(RequestHandler[CancelAppointmentCommand, bool]):
         appointment.deleted_at = datetime.now(UTC)
         self.db.commit()
 
+        # Fire webhook (best-effort)
+        try:
+            from backend.core.webhook_dispatcher import dispatch_webhook_event
+
+            dispatch_webhook_event(self.db, appointment.tenant_id, "appointment.cancelled", {
+                "event": "appointment.cancelled", "appointment_id": appointment.id,
+                "tenant_id": appointment.tenant_id, "barber_id": appointment.barber_id,
+                "client_id": appointment.client_id, "service_id": appointment.service_id,
+                "start_at": appointment.start_at.isoformat(), "end_at": appointment.end_at.isoformat(),
+            })
+        except Exception:  # noqa: BLE001
+            pass
+
         # Best-effort cancellation notification
         from backend.core.notifications import AppointmentNotification, get_notification_service
 

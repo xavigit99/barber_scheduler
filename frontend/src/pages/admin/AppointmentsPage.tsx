@@ -33,6 +33,9 @@ export default function AppointmentsPage() {
     service_id: '',
     data_inicio: '',
   });
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrence, setRecurrence] = useState<'weekly' | 'biweekly'>('weekly');
+  const [recurrenceCount, setRecurrenceCount] = useState(4);
 
   /* load reference data */
   useEffect(() => {
@@ -71,13 +74,27 @@ export default function AppointmentsPage() {
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     try {
-      await api.post('/appointments/', {
-        barber_id: Number(createForm.barber_id),
-        client_id: Number(createForm.client_id),
-        service_id: Number(createForm.service_id),
-        data_inicio: createForm.data_inicio,
-      });
-      toast('Agendamento criado', 'success');
+      if (isRecurring) {
+        const res = await api.post('/appointments/recurring', {
+          barber_id: Number(createForm.barber_id),
+          client_id: Number(createForm.client_id),
+          service_id: Number(createForm.service_id),
+          data_inicio: createForm.data_inicio,
+          recurrence,
+          count: recurrenceCount,
+        });
+        const created = res.data?.created?.length ?? 0;
+        const skipped = res.data?.skipped_count ?? 0;
+        toast(`${created} agendamentos criados, ${skipped} ignorados (conflito)`, 'success');
+      } else {
+        await api.post('/appointments/', {
+          barber_id: Number(createForm.barber_id),
+          client_id: Number(createForm.client_id),
+          service_id: Number(createForm.service_id),
+          data_inicio: createForm.data_inicio,
+        });
+        toast('Agendamento criado', 'success');
+      }
       setModalOpen(false);
       const res = await api.get(`/appointments/barbers/${selectedBarber}?target_date=${targetDate}`);
       setAppointments(Array.isArray(res.data) ? res.data : []);
@@ -214,6 +231,40 @@ export default function AppointmentsPage() {
             onChange={(e) => setCreateForm({ ...createForm, data_inicio: e.target.value })}
             required
           />
+
+          {/* Recurring toggle */}
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={isRecurring}
+              onChange={(e) => setIsRecurring(e.target.checked)}
+              className="rounded border-slate-300"
+            />
+            Recorrente
+          </label>
+
+          {isRecurring && (
+            <div className="space-y-3 rounded border border-slate-200 bg-slate-50 p-3">
+              <Select
+                label="Frequencia"
+                options={[
+                  { value: 'weekly', label: 'Semanal' },
+                  { value: 'biweekly', label: 'Quinzenal' },
+                ]}
+                value={recurrence}
+                onChange={(e) => setRecurrence(e.target.value as 'weekly' | 'biweekly')}
+              />
+              <Input
+                label="Quantidade (1-12)"
+                type="number"
+                value={String(recurrenceCount)}
+                onChange={(e) => setRecurrenceCount(Math.min(12, Math.max(1, Number(e.target.value))))}
+                min={1}
+                max={12}
+              />
+            </div>
+          )}
+
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setModalOpen(false)} type="button">Cancelar</Button>
             <Button type="submit">Criar</Button>

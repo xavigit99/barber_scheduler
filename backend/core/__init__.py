@@ -21,6 +21,7 @@ from backend.core.scheduling import (
 from backend.core.service import Service
 from backend.core.tenant import Tenant
 from backend.core.user import User
+from backend.core.webhook import Webhook
 
 __all__ = [
     "ADMIN_ROLE",
@@ -44,5 +45,6 @@ __all__ = [
     "Service",
     "Tenant",
     "User",
+    "Webhook",
     "ALLOWED_BLOCK_KINDS",
 ]

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from backend.api.appointment_http import (
     build_cancel_appointment_command,
     build_create_appointment_command,
+    build_create_recurring_appointment_command,
     build_get_appointment_query,
     build_list_barber_appointments_query,
     build_list_client_appointments_query,
@@ -24,6 +25,7 @@ from backend.infrastructure.schemas import (
     AppointmentCreateRequest,
     AppointmentRescheduleRequest,
     AppointmentResponse,
+    RecurringAppointmentRequest,
 )
 from meditor import build_mediator
 
@@ -214,6 +216,28 @@ async def list_my_appointments(
     return await mediator.send(
         build_list_client_appointments_query(client.id, target_date, tenant_id)
     )
+
+
+@router.post("/recurring", status_code=status.HTTP_201_CREATED)
+async def create_recurring_appointment(
+    payload: RecurringAppointmentRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles(ADMIN_ROLE, BARBER_ROLE)),
+    tenant_id: int | None = Header(None, alias=TENANT_HEADER_ALIAS),
+):
+    mediator = build_mediator(db)
+    try:
+        result = await mediator.send(
+            build_create_recurring_appointment_command(payload, tenant_id)
+        )
+    except (ConflictError, NotFoundError, ValidationError) as exc:
+        raise to_http_exception(exc) from exc
+    return {
+        "created": [
+            AppointmentResponse.model_validate(a) for a in result["created"]
+        ],
+        "skipped_count": result["skipped_count"],
+    }
 
 
 @router.get("/{appointment_id}", response_model=AppointmentResponse)
