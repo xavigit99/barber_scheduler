@@ -17,7 +17,7 @@ export default function BarbersPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Barber | null>(null);
-  const [form, setForm] = useState({ nome: '', email: '', telefone: '' });
+  const [form, setForm] = useState({ nome: '', email: '', telefone: '', username: '', password: '' });
 
   async function load() {
     try {
@@ -36,25 +36,31 @@ export default function BarbersPage() {
 
   function openCreate() {
     setEditing(null);
-    setForm({ nome: '', email: '', telefone: '' });
+    setForm({ nome: '', email: '', telefone: '', username: '', password: '' });
     setModalOpen(true);
   }
 
   function openEdit(b: Barber) {
     setEditing(b);
-    setForm({ nome: b.nome, email: b.email, telefone: b.telefone });
+    setForm({ nome: b.nome, email: b.email, telefone: b.telefone, username: '', password: '' });
     setModalOpen(true);
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const body = { ...form, tenant_id: tenantId };
     try {
       if (editing) {
-        await api.put(`/barbers/${editing.id}`, body);
+        await api.put(`/barbers/${editing.id}`, { nome: form.nome, email: form.email, telefone: form.telefone });
         toast('Barbeiro atualizado', 'success');
       } else {
-        await api.post('/barbers/', body);
+        await api.post('/auth/register-barber', {
+          username: form.username,
+          email: form.email,
+          password: form.password,
+          nome: form.nome,
+          telefone: form.telefone || null,
+          tenant_id: Number(tenantId),
+        });
         toast('Barbeiro criado', 'success');
       }
       setModalOpen(false);
@@ -144,8 +150,25 @@ export default function BarbersPage() {
             label="Telefone"
             value={form.telefone}
             onChange={(e) => setForm({ ...form, telefone: e.target.value })}
-            required
           />
+          {!editing && (
+            <>
+              <Input
+                label="Username"
+                value={form.username}
+                onChange={(e) => setForm({ ...form, username: e.target.value })}
+                required
+              />
+              <Input
+                label="Password"
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                required
+                minLength={8}
+              />
+            </>
+          )}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setModalOpen(false)} type="button">
               Cancelar

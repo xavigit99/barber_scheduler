@@ -1,10 +1,12 @@
 from backend.application.commands.authenticate_user_command import AuthenticateUserCommand
 from backend.application.commands.bootstrap_admin_command import BootstrapAdminCommand
 from backend.application.commands.create_user_command import CreateUserCommand
+from backend.application.commands.register_barber_command import RegisterBarberCommand
 from backend.application.commands.register_client_command import RegisterClientCommand
 from backend.application.queries.get_user_query import GetUserQuery
 from backend.infrastructure.schemas import (
     AuthLoginRequest,
+    BarberRegisterRequest,
     BootstrapAdminRequest,
     ClientRegisterRequest,
     UserCreateRequest,
@@ -41,6 +43,17 @@ def build_register_client_command(payload: ClientRegisterRequest) -> RegisterCli
         email=payload.email,
         password=payload.password,
         nome=payload.nome,
+        tenant_id=payload.tenant_id,
+    )
+
+
+def build_register_barber_command(payload: BarberRegisterRequest) -> RegisterBarberCommand:
+    return RegisterBarberCommand(
+        username=payload.username,
+        email=payload.email,
+        password=payload.password,
+        nome=payload.nome,
+        telefone=payload.telefone,
         tenant_id=payload.tenant_id,
     )
 

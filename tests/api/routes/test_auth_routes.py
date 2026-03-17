@@ -6,11 +6,12 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
 from fastapi import HTTPException
 
-from backend.api.routes.auth_routes import bootstrap_admin, create_user, get_me, login
+from backend.api.routes.auth_routes import bootstrap_admin, create_user, get_me, login, register_barber
 from backend.core.exceptions import AuthenticationError, ConflictError
 from backend.core.roles import ADMIN_ROLE, BARBER_ROLE
 from backend.infrastructure.schemas import (
     AuthLoginRequest,
+    BarberRegisterRequest,
     BootstrapAdminRequest,
     UserCreateRequest,
 )
@@ -151,6 +152,52 @@ class AuthRoutesTestCase(unittest.IsolatedAsyncioTestCase):
                         email="barber@example.com",
                         password="password123",
                         role=BARBER_ROLE,
+                    ),
+                    db=object(),
+                    current_user={"role": ADMIN_ROLE},
+                )
+
+        self.assertEqual(context.exception.status_code, 409)
+
+
+    async def test_register_barber_returns_created_user(self):
+        user = {
+            "id": 3,
+            "username": "barber1",
+            "email": "barber1@example.com",
+            "role": BARBER_ROLE,
+        }
+        mediator = FakeMediator(user)
+
+        with patch("backend.api.routes.auth_routes.build_mediator", return_value=mediator):
+            result = await register_barber(
+                BarberRegisterRequest(
+                    username="barber1",
+                    email="barber1@example.com",
+                    password="password123",
+                    nome="Barbeiro Um",
+                    tenant_id=1,
+                ),
+                db=object(),
+                current_user={"role": ADMIN_ROLE},
+            )
+
+        self.assertEqual(result["role"], BARBER_ROLE)
+        self.assertEqual(mediator.requests[0].username, "barber1")
+        self.assertEqual(mediator.requests[0].nome, "Barbeiro Um")
+
+    async def test_register_barber_maps_conflict_to_409(self):
+        mediator = FakeMediator(ConflictError("User with this username or email already exists"))
+
+        with patch("backend.api.routes.auth_routes.build_mediator", return_value=mediator):
+            with self.assertRaises(HTTPException) as context:
+                await register_barber(
+                    BarberRegisterRequest(
+                        username="barber1",
+                        email="barber1@example.com",
+                        password="password123",
+                        nome="Barbeiro Um",
+                        tenant_id=1,
                     ),
                     db=object(),
                     current_user={"role": ADMIN_ROLE},
