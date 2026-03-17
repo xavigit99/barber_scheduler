@@ -39,9 +39,6 @@ def upgrade() -> None:
     """))
 
     conn.execute(sa.text(
-        "CREATE INDEX IF NOT EXISTS ix_feedback_id ON feedback (id)"
-    ))
-    conn.execute(sa.text(
         "CREATE INDEX IF NOT EXISTS ix_feedback_appointment_id ON feedback (appointment_id)"
     ))
     conn.execute(sa.text(

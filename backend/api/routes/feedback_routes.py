@@ -13,7 +13,7 @@ from backend.api.tenant_header import TENANT_HEADER_ALIAS
 from backend.core.exceptions import ConflictError, ForbiddenError, NotFoundError, ValidationError
 from backend.core.roles import ADMIN_ROLE, CLIENT_ROLE
 from backend.infrastructure.database import get_db
-from backend.infrastructure.schemas import FeedbackCreate, FeedbackResponse
+from backend.infrastructure.schemas import FeedbackCreate, FeedbackResponse, PublicFeedbackResponse
 from meditor import build_mediator
 
 router = APIRouter(tags=["Feedback"])
@@ -40,7 +40,7 @@ async def create_feedback(
         raise to_http_exception(exc) from exc
 
 
-@router.get("/feedback/barber/{barber_id}", response_model=list[FeedbackResponse])
+@router.get("/feedback/barber/{barber_id}", response_model=list[PublicFeedbackResponse])
 async def list_barber_feedback(
     barber_id: int,
     db: Session = Depends(get_db),

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from backend.application.queries.list_barber_feedback_query import ListBarberFeedbackQuery
 from backend.core.barber import Barber
+from backend.core.exceptions import NotFoundError
 from backend.core.feedback import Feedback
 
 
@@ -18,7 +19,6 @@ class ListBarberFeedbackHandler(RequestHandler[ListBarberFeedbackQuery, list]):
             .first()
         )
         if barber is None:
-            from backend.core.exceptions import NotFoundError
             raise NotFoundError("Barber not found")
 
         q = self.db.query(Feedback).filter(
