@@ -125,7 +125,7 @@ function RescheduleModal({ appointment, onClose, onDone }: RescheduleModalProps)
     if (!selectedSlot) return;
     setSubmitting(true);
     try {
-      await api.put(`/appointments/${appointment.id}`, { start_at: selectedSlot.inicio });
+      await api.patch(`/appointments/${appointment.id}`, { nova_data_inicio: selectedSlot.inicio });
       toast('Agendamento remarcado!', 'success');
       onDone();
     } catch {
