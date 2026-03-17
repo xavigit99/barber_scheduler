@@ -15,11 +15,15 @@ import BarberAvailabilityPage from './pages/admin/BarberAvailabilityPage';
 import ClientsPage from './pages/admin/ClientsPage';
 import ServicesPage from './pages/admin/ServicesPage';
 import AppointmentsPage from './pages/admin/AppointmentsPage';
+import ReportsPage from './pages/admin/ReportsPage';
+import CompliancePage from './pages/admin/CompliancePage';
 import SchedulePage from './pages/barber/SchedulePage';
 import BlocksPage from './pages/barber/BlocksPage';
+import AvailabilityPage from './pages/barber/AvailabilityPage';
 import BookPage from './pages/client/BookPage';
 import MyAppointmentsPage from './pages/client/MyAppointmentsPage';
 import MyFeedbackPage from './pages/client/MyFeedbackPage';
+import ProfilePage from './pages/client/ProfilePage';
 import PublicBookPage from './pages/public/PublicBookPage';
 import ClientRegisterPage from './pages/public/ClientRegisterPage';
 import ClientLoginPage from './pages/public/ClientLoginPage';
@@ -61,12 +65,15 @@ export default function App() {
               <Route path="/admin/clients" element={<ClientsPage />} />
               <Route path="/admin/services" element={<ServicesPage />} />
               <Route path="/admin/appointments" element={<AppointmentsPage />} />
+              <Route path="/admin/reports" element={<ReportsPage />} />
+              <Route path="/admin/compliance" element={<CompliancePage />} />
             </Route>
 
             {/* Barber routes */}
             <Route element={<ProtectedRoute allowedRoles={['barber']} />}>
               <Route path="/barber" element={<SchedulePage />} />
               <Route path="/barber/blocks" element={<BlocksPage />} />
+              <Route path="/barber/availability" element={<AvailabilityPage />} />
             </Route>
 
             {/* Client routes */}
@@ -74,6 +81,7 @@ export default function App() {
               <Route path="/client" element={<BookPage />} />
               <Route path="/client/appointments" element={<MyAppointmentsPage />} />
               <Route path="/client/feedback" element={<MyFeedbackPage />} />
+              <Route path="/client/profile" element={<ProfilePage />} />
             </Route>
 
             {/* Catch-all */}

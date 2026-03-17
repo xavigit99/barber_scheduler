@@ -5,7 +5,7 @@ import Button from '../../components/Button';
 import Spinner from '../../components/Spinner';
 import Table from '../../components/Table';
 import { useToast } from '../../components/Toast';
-import type { Appointment, Barber, Feedback, Service } from '../../types';
+import type { Appointment, Barber, Feedback, Service, AvailableSlot } from '../../types';
 
 /* ── Star picker ─────────────────────────────────────────────────── */
 function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
@@ -92,6 +92,107 @@ function ReviewModal({ appointmentId, barberName, onClose, onDone }: ReviewModal
   );
 }
 
+/* ── Reschedule modal ─────────────────────────────────────────────── */
+interface RescheduleModalProps {
+  appointment: Appointment;
+  onClose: () => void;
+  onDone: () => void;
+}
+
+function RescheduleModal({ appointment, onClose, onDone }: RescheduleModalProps) {
+  const { toast } = useToast();
+  const [targetDate, setTargetDate] = useState('');
+  const [slots, setSlots] = useState<AvailableSlot[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!targetDate) { setSlots([]); return; }
+    setLoadingSlots(true);
+    setSelectedSlot(null);
+    api
+      .get(`/barbers/${appointment.barber_id}/availability/slots?service_id=${appointment.service_id}&target_date=${targetDate}&timezone=Europe/Lisbon`)
+      .then((res) => {
+        const data = res.data?.slots ?? res.data;
+        setSlots(Array.isArray(data) ? data : []);
+      })
+      .catch(() => { toast('Erro ao carregar horários', 'error'); setSlots([]); })
+      .finally(() => setLoadingSlots(false));
+  }, [targetDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleSubmit() {
+    if (!selectedSlot) return;
+    setSubmitting(true);
+    try {
+      await api.put(`/appointments/${appointment.id}`, { start_at: selectedSlot.inicio });
+      toast('Agendamento remarcado!', 'success');
+      onDone();
+    } catch {
+      toast('Erro ao remarcar agendamento', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const handleEsc = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape' && !submitting) onClose();
+  }, [onClose, submitting]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [handleEsc]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl space-y-4">
+        <h2 className="text-lg font-semibold text-slate-800">Remarcar Agendamento</h2>
+        <Input
+          label="Nova data"
+          type="date"
+          value={targetDate}
+          onChange={(e) => setTargetDate(e.target.value)}
+          min={new Date().toISOString().split('T')[0]}
+        />
+        {targetDate && (
+          loadingSlots ? (
+            <Spinner />
+          ) : slots.length === 0 ? (
+            <p className="text-sm text-slate-500">Nenhum horário disponível.</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {slots.map((slot) => {
+                const time = new Date(slot.inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+                const isSelected = selectedSlot?.inicio === slot.inicio;
+                return (
+                  <button
+                    key={slot.inicio}
+                    onClick={() => setSelectedSlot(slot)}
+                    className={`rounded-lg border px-3 py-2 text-sm transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-medium'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-300'
+                    }`}
+                  >
+                    {time}
+                  </button>
+                );
+              })}
+            </div>
+          )
+        )}
+        <div className="flex gap-2 pt-2">
+          <Button variant="secondary" onClick={onClose} disabled={submitting}>Cancelar</Button>
+          <Button onClick={handleSubmit} disabled={!selectedSlot || submitting}>
+            {submitting ? 'A remarcar...' : 'Confirmar'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main page ───────────────────────────────────────────────────── */
 type Tab = 'date' | 'past';
 
@@ -105,6 +206,7 @@ export default function MyAppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [targetDate, setTargetDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [reviewTarget, setReviewTarget] = useState<{ id: string; barberName: string } | null>(null);
+  const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
 
   /* Load barber/service maps + already-reviewed set once */
   useEffect(() => {
@@ -253,9 +355,14 @@ export default function MyAppointmentsPage() {
                       </Button>
                     )
                   ) : (
-                    <Button size="sm" variant="danger" onClick={() => handleCancel(a.id)}>
-                      Cancelar
-                    </Button>
+                    <>
+                      <Button size="sm" variant="secondary" onClick={() => setRescheduleTarget(a)}>
+                        Remarcar
+                      </Button>
+                      <Button size="sm" variant="danger" onClick={() => handleCancel(a.id)}>
+                        Cancelar
+                      </Button>
+                    </>
                   )}
                 </div>
               ),
@@ -275,6 +382,17 @@ export default function MyAppointmentsPage() {
           onDone={(id) => {
             setReviewed((prev) => new Set([...prev, id]));
             setReviewTarget(null);
+          }}
+        />
+      )}
+
+      {rescheduleTarget && (
+        <RescheduleModal
+          appointment={rescheduleTarget}
+          onClose={() => setRescheduleTarget(null)}
+          onDone={() => {
+            setRescheduleTarget(null);
+            load(tab, targetDate);
           }}
         />
       )}
