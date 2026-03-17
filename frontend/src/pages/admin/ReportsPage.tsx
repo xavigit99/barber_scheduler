@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../../lib/api';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
@@ -6,7 +6,28 @@ import Spinner from '../../components/Spinner';
 import Table from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../contexts/AuthContext';
-import type { Appointment } from '../../types';
+/* Backend daily report shapes */
+interface DailyEntry {
+  appointment_id: number;
+  start_at: string;
+  end_at: string;
+  service: string | null;
+  service_price: number;
+  client: string | null;
+}
+
+interface DailyBarber {
+  barber_id: number;
+  barber_name: string;
+  total_appointments: number;
+  appointments: DailyEntry[];
+}
+
+interface DailyReport {
+  date: string;
+  total_appointments: number;
+  barbers: DailyBarber[];
+}
 
 /* Backend returns this shape from GET /admin/stats */
 interface Stats {
@@ -43,7 +64,7 @@ export default function ReportsPage() {
 
   /* Daily appointments */
   const [dailyDate, setDailyDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [dailyAppts, setDailyAppts] = useState<Appointment[]>([]);
+  const [dailyReport, setDailyReport] = useState<DailyReport | null>(null);
   const [dailyLoading, setDailyLoading] = useState(false);
 
   /* Revenue — only fires on explicit button click, not on every keystroke */
@@ -67,23 +88,25 @@ export default function ReportsPage() {
       .finally(() => setStatsLoading(false));
   }, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* Load daily — fires on initial mount and on explicit date change via button */
-  const loadDaily = useCallback(async () => {
+  /* Load daily appointments */
+  async function loadDaily() {
     if (!tenantId || !dailyDate) return;
     setDailyLoading(true);
     try {
       const res = await api.get(`/admin/reports/daily?target_date=${dailyDate}`);
-      setDailyAppts(Array.isArray(res.data) ? res.data : []);
+      setDailyReport(res.data ?? null);
     } catch {
       toast('Erro ao carregar agendamentos do dia', 'error');
-      setDailyAppts([]);
+      setDailyReport(null);
     } finally {
       setDailyLoading(false);
     }
-  }, [tenantId, dailyDate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
-  /* Auto-load daily on mount only */
-  useEffect(() => { loadDaily(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  /* Auto-load daily when tenant becomes available */
+  useEffect(() => {
+    if (tenantId) loadDaily();
+  }, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* Revenue — manual trigger only */
   async function loadRevenue() {
@@ -145,29 +168,44 @@ export default function ReportsPage() {
         </div>
         {dailyLoading ? (
           <Spinner />
+        ) : dailyReport && dailyReport.total_appointments > 0 ? (
+          <div className="space-y-6">
+            {dailyReport.barbers.map((b) => (
+              <div key={b.barber_id}>
+                <p className="mb-2 text-sm font-medium text-slate-600">
+                  {b.barber_name} — {b.total_appointments} agendamento(s)
+                </p>
+                <Table
+                  columns={[
+                    {
+                      key: 'start',
+                      header: 'Início',
+                      render: (a) =>
+                        new Date(a.start_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+                    },
+                    {
+                      key: 'end',
+                      header: 'Fim',
+                      render: (a) =>
+                        new Date(a.end_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+                    },
+                    { key: 'client', header: 'Cliente', render: (a) => a.client ?? '—' },
+                    { key: 'service', header: 'Serviço', render: (a) => a.service ?? '—' },
+                    {
+                      key: 'price',
+                      header: 'Preço',
+                      render: (a) => fmtEur.format(a.service_price),
+                    },
+                  ]}
+                  data={b.appointments}
+                  keyExtractor={(a) => String(a.appointment_id)}
+                  emptyMessage=""
+                />
+              </div>
+            ))}
+          </div>
         ) : (
-          <Table
-            columns={[
-              {
-                key: 'start',
-                header: 'Início',
-                render: (a) =>
-                  new Date(a.start_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
-              },
-              {
-                key: 'end',
-                header: 'Fim',
-                render: (a) =>
-                  new Date(a.end_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
-              },
-              { key: 'barber', header: 'Barbeiro ID', render: (a) => <span className="font-mono text-xs">{String(a.barber_id).slice(0, 8)}</span> },
-              { key: 'client', header: 'Cliente ID', render: (a) => <span className="font-mono text-xs">{String(a.client_id).slice(0, 8)}</span> },
-              { key: 'service', header: 'Serviço ID', render: (a) => <span className="font-mono text-xs">{String(a.service_id).slice(0, 8)}</span> },
-            ]}
-            data={dailyAppts}
-            keyExtractor={(a) => a.id}
-            emptyMessage="Sem agendamentos para esta data."
-          />
+          <p className="text-sm text-slate-500">Sem agendamentos para esta data.</p>
         )}
       </section>
 
