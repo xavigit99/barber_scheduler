@@ -6,6 +6,7 @@ from backend.api.auth_http import (
     build_authenticate_user_command,
     build_bootstrap_admin_command,
     build_create_user_command,
+    build_register_barber_command,
     build_register_client_command,
 )
 from backend.application.commands.change_password_command import ChangePasswordCommand
@@ -15,6 +16,7 @@ from backend.infrastructure.database import get_db
 from backend.infrastructure.schemas import (
     AuthLoginRequest,
     AuthTokenResponse,
+    BarberRegisterRequest,
     BootstrapAdminRequest,
     ChangePasswordRequest,
     ClientRegisterRequest,
@@ -59,6 +61,22 @@ async def register_client(payload: ClientRegisterRequest, db: Session = Depends(
     mediator = build_mediator(db)
     try:
         return await mediator.send(build_register_client_command(payload))
+    except ConflictError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post("/register-barber", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def register_barber(
+    payload: BarberRegisterRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles(ADMIN_ROLE)),
+):
+    mediator = build_mediator(db)
+    try:
+        return await mediator.send(build_register_barber_command(payload))
     except ConflictError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

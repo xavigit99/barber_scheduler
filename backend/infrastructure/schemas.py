@@ -213,6 +213,15 @@ class ClientRegisterRequest(BaseModel):
     tenant_id: int
 
 
+class BarberRegisterRequest(BaseModel):
+    username: str
+    email: str
+    password: str = Field(min_length=8)
+    nome: str
+    telefone: str | None = None
+    tenant_id: int
+
+
 class BootstrapAdminRequest(BaseModel):
     username: str
     email: str

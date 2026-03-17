@@ -7,13 +7,16 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 from backend.application.commands.authenticate_user_command import AuthenticateUserCommand
 from backend.application.commands.bootstrap_admin_command import BootstrapAdminCommand
 from backend.application.commands.create_user_command import CreateUserCommand
+from backend.application.commands.register_barber_command import RegisterBarberCommand
 from backend.application.handlers.auth.authenticate_user_handler import AuthenticateUserHandler
 from backend.application.handlers.auth.bootstrap_admin_handler import BootstrapAdminHandler
 from backend.application.handlers.auth.create_user_handler import CreateUserHandler
 from backend.application.handlers.auth.get_user_handler import GetUserHandler
+from backend.application.handlers.auth.register_barber_handler import RegisterBarberHandler
 from backend.application.queries.get_user_query import GetUserQuery
+from backend.core.barber import Barber
 from backend.core.exceptions import AuthenticationError, ConflictError
-from backend.core.roles import ADMIN_ROLE
+from backend.core.roles import ADMIN_ROLE, BARBER_ROLE
 from backend.core.security import decode_access_token, hash_password
 from backend.core.user import User
 
@@ -170,6 +173,66 @@ class AuthHandlersTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(str(context.exception), "Invalid role")
+
+
+    async def test_register_barber_handler_creates_user_and_barber(self):
+        db = MagicMock()
+        query_builder = MagicMock()
+        db.query.return_value = query_builder
+        query_builder.filter.return_value = query_builder
+        query_builder.first.return_value = None
+
+        added_objects = []
+        db.add.side_effect = lambda obj: added_objects.append(obj)
+
+        def flush_side_effect():
+            for obj in added_objects:
+                if isinstance(obj, User):
+                    obj.id = 42
+
+        db.flush.side_effect = flush_side_effect
+
+        handler = RegisterBarberHandler(db)
+        command = RegisterBarberCommand(
+            username="barber1",
+            email="barber1@example.com",
+            password="password123",
+            nome="Barbeiro Um",
+            telefone="912345678",
+            tenant_id=1,
+        )
+
+        result = await handler.handle(command)
+
+        self.assertIsInstance(result, User)
+        self.assertEqual(result.username, "barber1")
+        self.assertEqual(result.role, BARBER_ROLE)
+
+        barber_objects = [o for o in added_objects if isinstance(o, Barber)]
+        self.assertEqual(len(barber_objects), 1)
+        self.assertEqual(barber_objects[0].nome, "Barbeiro Um")
+        self.assertEqual(barber_objects[0].user_id, 42)
+        self.assertEqual(barber_objects[0].tenant_id, 1)
+
+    async def test_register_barber_handler_rejects_duplicate(self):
+        db = MagicMock()
+        query_builder = MagicMock()
+        db.query.return_value = query_builder
+        query_builder.filter.return_value = query_builder
+        query_builder.first.return_value = object()
+
+        handler = RegisterBarberHandler(db)
+        with self.assertRaises(ConflictError):
+            await handler.handle(
+                RegisterBarberCommand(
+                    username="barber1",
+                    email="barber1@example.com",
+                    password="password123",
+                    nome="Barbeiro Um",
+                    telefone=None,
+                    tenant_id=1,
+                )
+            )
 
 
 if __name__ == "__main__":
