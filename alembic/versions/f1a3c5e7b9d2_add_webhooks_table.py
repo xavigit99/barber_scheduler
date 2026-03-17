@@ -1,7 +1,7 @@
 """add webhooks table
 
 Revision ID: f1a3c5e7b9d2
-Revises: c9e1f3b4a2d8
+Revises: e5a2c8f1b9d3
 Create Date: 2026-03-17 00:00:00.000000
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "f1a3c5e7b9d2"
-down_revision: str | Sequence[str] | None = "c9e1f3b4a2d8"
+down_revision: str | Sequence[str] | None = "e5a2c8f1b9d3"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
