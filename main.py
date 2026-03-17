@@ -29,7 +29,7 @@ from backend.infrastructure.database import Base, engine
 setup_logging(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
 
-# ── Database ─────────────────────────────────────────────────────────────────
+# ── Database ──────────────────────────────────────────────────────────────────
 Base.metadata.create_all(bind=engine)
 
 # ── Rate limiter ─────────────────────────────────────────────────────────────
