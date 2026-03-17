@@ -124,6 +124,7 @@ export default function ProfilePage() {
             type="password"
             value={pwForm.new_password}
             onChange={(e) => setPwForm({ ...pwForm, new_password: e.target.value })}
+            minLength={8}
             required
           />
           <Input

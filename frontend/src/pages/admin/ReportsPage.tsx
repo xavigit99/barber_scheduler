@@ -8,17 +8,21 @@ import { useToast } from '../../components/Toast';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Appointment } from '../../types';
 
+/* Backend returns this shape from GET /admin/stats */
 interface Stats {
-  total_barbers: number;
-  total_clients: number;
-  total_services: number;
-  appointments_today: number;
+  barbers: number;
+  clients: number;
+  services: number;
+  appointments_month: number;
+  cancelled_month: number;
+  revenue_month: number;
 }
 
 interface RevenueReport {
   total_revenue: number;
-  appointments: Appointment[];
 }
+
+const fmtEur = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
 
 function KpiCard({ label, value }: { label: string; value: string | number }) {
   return (
@@ -42,7 +46,7 @@ export default function ReportsPage() {
   const [dailyAppts, setDailyAppts] = useState<Appointment[]>([]);
   const [dailyLoading, setDailyLoading] = useState(false);
 
-  /* Revenue */
+  /* Revenue — only fires on explicit button click, not on every keystroke */
   const [revStart, setRevStart] = useState(() => {
     const d = new Date();
     d.setDate(1);
@@ -52,7 +56,7 @@ export default function ReportsPage() {
   const [revenue, setRevenue] = useState<RevenueReport | null>(null);
   const [revLoading, setRevLoading] = useState(false);
 
-  /* Load stats once (and when tenant changes) */
+  /* Load stats once per tenant */
   useEffect(() => {
     if (!tenantId) return;
     setStatsLoading(true);
@@ -63,7 +67,7 @@ export default function ReportsPage() {
       .finally(() => setStatsLoading(false));
   }, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* Load daily appointments */
+  /* Load daily — fires on initial mount and on explicit date change via button */
   const loadDaily = useCallback(async () => {
     if (!tenantId || !dailyDate) return;
     setDailyLoading(true);
@@ -78,10 +82,11 @@ export default function ReportsPage() {
     }
   }, [tenantId, dailyDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { loadDaily(); }, [loadDaily]);
+  /* Auto-load daily on mount only */
+  useEffect(() => { loadDaily(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* Load revenue */
-  const loadRevenue = useCallback(async () => {
+  /* Revenue — manual trigger only */
+  async function loadRevenue() {
     if (!tenantId || !revStart || !revEnd) return;
     setRevLoading(true);
     try {
@@ -93,12 +98,7 @@ export default function ReportsPage() {
     } finally {
       setRevLoading(false);
     }
-  }, [tenantId, revStart, revEnd]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => { loadRevenue(); }, [loadRevenue]);
-
-  const fmt = (v: number) =>
-    new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v);
+  }
 
   if (!tenantId) {
     return (
@@ -114,15 +114,17 @@ export default function ReportsPage() {
 
       {/* KPIs */}
       <section>
-        <h2 className="mb-4 text-lg font-medium text-slate-700">Resumo</h2>
+        <h2 className="mb-4 text-lg font-medium text-slate-700">Resumo do Mês</h2>
         {statsLoading ? (
           <Spinner />
         ) : stats ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <KpiCard label="Barbeiros" value={stats.total_barbers} />
-            <KpiCard label="Clientes" value={stats.total_clients} />
-            <KpiCard label="Serviços" value={stats.total_services} />
-            <KpiCard label="Agendamentos Hoje" value={stats.appointments_today} />
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <KpiCard label="Barbeiros" value={stats.barbers} />
+            <KpiCard label="Clientes" value={stats.clients} />
+            <KpiCard label="Serviços" value={stats.services} />
+            <KpiCard label="Agendamentos (mês)" value={stats.appointments_month} />
+            <KpiCard label="Cancelamentos (mês)" value={stats.cancelled_month} />
+            <KpiCard label="Receita (mês)" value={fmtEur.format(stats.revenue_month)} />
           </div>
         ) : (
           <p className="text-sm text-slate-500">Sem dados disponíveis.</p>
@@ -185,14 +187,14 @@ export default function ReportsPage() {
             value={revEnd}
             onChange={(e) => setRevEnd(e.target.value)}
           />
-          <Button size="sm" onClick={loadRevenue}>Atualizar</Button>
+          <Button size="sm" onClick={loadRevenue}>Calcular</Button>
         </div>
         {revLoading ? (
           <Spinner />
         ) : revenue !== null ? (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-4 inline-flex items-center gap-3">
             <span className="text-sm text-emerald-700">Receita total:</span>
-            <span className="text-2xl font-bold text-emerald-800">{fmt(revenue.total_revenue ?? 0)}</span>
+            <span className="text-2xl font-bold text-emerald-800">{fmtEur.format(revenue.total_revenue ?? 0)}</span>
           </div>
         ) : null}
       </section>
