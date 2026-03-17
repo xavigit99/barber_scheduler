@@ -177,11 +177,22 @@ export default function PublicBookPage() {
     <div className="min-h-screen bg-slate-900 flex flex-col items-center px-4 py-8">
       <div className="w-full max-w-sm">
         {/* Brand */}
-        <div className="mb-6 flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-amber-500 flex items-center justify-center text-slate-900 font-bold text-sm">
-            B
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-full bg-amber-500 flex items-center justify-center text-slate-900 font-bold text-sm">
+              B
+            </div>
+            <span className="text-white font-semibold text-lg">BarberPro</span>
           </div>
-          <span className="text-white font-semibold text-lg">BarberPro</span>
+          <div className="flex items-center gap-3 text-sm">
+            <Link to="/login" className="text-slate-400 hover:text-white transition-colors">Entrar</Link>
+            <Link
+              to={`/join/${tenantId}`}
+              className="rounded-lg bg-amber-500 px-3 py-1.5 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
+            >
+              Criar conta
+            </Link>
+          </div>
         </div>
 
         {/* Progress bar */}
