@@ -6,7 +6,13 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
 from fastapi import HTTPException
 
-from backend.api.routes.auth_routes import bootstrap_admin, create_user, get_me, login, register_barber
+from backend.api.routes.auth_routes import (
+    bootstrap_admin,
+    create_user,
+    get_me,
+    login,
+    register_barber,
+)
 from backend.core.exceptions import AuthenticationError, ConflictError
 from backend.core.roles import ADMIN_ROLE, BARBER_ROLE
 from backend.infrastructure.schemas import (
