@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../lib/api';
 import Input from '../../components/Input';
-import Table from '../../components/Table';
 import Button from '../../components/Button';
 import Spinner from '../../components/Spinner';
+import Table from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import type { Appointment, Barber, Feedback, Service } from '../../types';
 
+/* ── Star picker ─────────────────────────────────────────────────── */
 function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
     <div className="flex gap-1">
@@ -24,6 +25,7 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
   );
 }
 
+/* ── Review modal ────────────────────────────────────────────────── */
 interface ReviewModalProps {
   appointmentId: string;
   barberName: string;
@@ -80,9 +82,7 @@ function ReviewModal({ appointmentId, barberName, onClose, onDone }: ReviewModal
           <p className="text-xs text-slate-400 text-right">{comentario.length}/2000</p>
         </div>
         <div className="flex gap-2 pt-2">
-          <Button variant="secondary" onClick={onClose} disabled={submitting}>
-            Cancelar
-          </Button>
+          <Button variant="secondary" onClick={onClose} disabled={submitting}>Cancelar</Button>
           <Button onClick={handleSubmit} disabled={submitting}>
             {submitting ? 'A enviar...' : 'Enviar Avaliação'}
           </Button>
@@ -92,8 +92,12 @@ function ReviewModal({ appointmentId, barberName, onClose, onDone }: ReviewModal
   );
 }
 
+/* ── Main page ───────────────────────────────────────────────────── */
+type Tab = 'date' | 'past';
+
 export default function MyAppointmentsPage() {
   const { toast } = useToast();
+  const [tab, setTab] = useState<Tab>('date');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [barbers, setBarbers] = useState<Record<string, string>>({});
   const [services, setServices] = useState<Record<string, string>>({});
@@ -102,33 +106,37 @@ export default function MyAppointmentsPage() {
   const [targetDate, setTargetDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [reviewTarget, setReviewTarget] = useState<{ id: string; barberName: string } | null>(null);
 
-  /* Load barber/service name maps + already-reviewed appointments once */
+  /* Load barber/service maps + already-reviewed set once */
   useEffect(() => {
     Promise.all([api.get('/barbers/'), api.get('/services/'), api.get('/feedback/me')])
       .then(([bRes, sRes, fRes]) => {
         const bMap: Record<string, string> = {};
-        (Array.isArray(bRes.data) ? bRes.data : []).forEach((b: Barber) => {
-          bMap[String(b.id)] = b.nome;
-        });
+        (Array.isArray(bRes.data) ? bRes.data : []).forEach((b: Barber) => { bMap[String(b.id)] = b.nome; });
         const sMap: Record<string, string> = {};
-        (Array.isArray(sRes.data) ? sRes.data : []).forEach((s: Service) => {
-          sMap[String(s.id)] = s.nome;
-        });
+        (Array.isArray(sRes.data) ? sRes.data : []).forEach((s: Service) => { sMap[String(s.id)] = s.nome; });
         setBarbers(bMap);
         setServices(sMap);
-        const ids = new Set<string>(
+        setReviewed(new Set(
           (Array.isArray(fRes.data) ? fRes.data : []).map((f: Feedback) => String(f.appointment_id))
-        );
-        setReviewed(ids);
+        ));
       })
       .catch(() => {/* non-critical */});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function load(date: string) {
+  async function load(mode: Tab, date: string) {
     setLoading(true);
     try {
-      const res = await api.get(`/appointments/clients/me/appointments?target_date=${date}`);
-      setAppointments(Array.isArray(res.data) ? res.data : []);
+      const url = mode === 'past'
+        ? '/appointments/clients/me/appointments'
+        : `/appointments/clients/me/appointments?target_date=${date}`;
+      const res = await api.get(url);
+      let data: Appointment[] = Array.isArray(res.data) ? res.data : [];
+      if (mode === 'past') {
+        const now = new Date();
+        data = data.filter((a) => new Date(a.end_at) < now);
+        data.sort((a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime());
+      }
+      setAppointments(data);
     } catch {
       toast('Erro ao carregar agendamentos', 'error');
       setAppointments([]);
@@ -137,9 +145,7 @@ export default function MyAppointmentsPage() {
     }
   }
 
-  useEffect(() => {
-    load(targetDate);
-  }, [targetDate]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(tab, targetDate); }, [tab, targetDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleCancel(id: string) {
     if (!confirm('Cancelar este agendamento?')) return;
@@ -152,22 +158,48 @@ export default function MyAppointmentsPage() {
     }
   }
 
-  function isPast(appointment: Appointment) {
-    return new Date(appointment.end_at) < new Date();
+  function isPast(a: Appointment) {
+    return new Date(a.end_at) < new Date();
   }
 
   return (
     <div>
       <h1 className="mb-6 text-2xl font-semibold text-slate-800">Meus Agendamentos</h1>
 
-      <div className="mb-4">
-        <Input
-          label="Data"
-          type="date"
-          value={targetDate}
-          onChange={(e) => setTargetDate(e.target.value)}
-        />
+      {/* Tabs */}
+      <div className="mb-4 flex gap-1 border-b border-slate-200">
+        {([['date', 'Por Data'], ['past', 'Passados (Avaliar)']] as [Tab, string][]).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer ${
+              tab === key
+                ? 'border-emerald-500 text-emerald-700'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
+
+      {/* Date filter (only in date tab) */}
+      {tab === 'date' && (
+        <div className="mb-4">
+          <Input
+            label="Data"
+            type="date"
+            value={targetDate}
+            onChange={(e) => setTargetDate(e.target.value)}
+          />
+        </div>
+      )}
+
+      {tab === 'past' && (
+        <p className="mb-4 text-sm text-slate-500">
+          Agendamentos concluídos — clica em <strong>Avaliar</strong> para deixar a tua avaliação.
+        </p>
+      )}
 
       {loading ? (
         <Spinner />
@@ -181,7 +213,7 @@ export default function MyAppointmentsPage() {
             },
             {
               key: 'start',
-              header: 'Inicio',
+              header: 'Início',
               render: (a) =>
                 new Date(a.start_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
             },
@@ -198,7 +230,7 @@ export default function MyAppointmentsPage() {
             },
             {
               key: 'service',
-              header: 'Servico',
+              header: 'Serviço',
               render: (a) => services[String(a.service_id)] ?? `#${a.service_id}`,
             },
             {
@@ -231,7 +263,7 @@ export default function MyAppointmentsPage() {
           ]}
           data={appointments}
           keyExtractor={(a) => a.id}
-          emptyMessage="Nenhum agendamento para esta data."
+          emptyMessage={tab === 'past' ? 'Nenhum agendamento passado.' : 'Nenhum agendamento para esta data.'}
         />
       )}
 
