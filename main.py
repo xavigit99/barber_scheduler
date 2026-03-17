@@ -23,11 +23,15 @@ from backend.api.routes.report_routes import router as report_router
 from backend.api.routes.service_routes import router as service_router
 from backend.api.routes.stats_routes import router as stats_router
 from backend.core.logging_config import setup_logging
+from backend.core.notifications import build_notification_service, set_notification_service
 from backend.infrastructure.database import Base, engine
 
 # ── Logging ─────────────────────────────────────────────────────────────────
 setup_logging(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
+
+# ── Notifications ─────────────────────────────────────────────────────────────
+set_notification_service(build_notification_service())
 
 # ── Database ─────────────────────────────────────────────────────────────────
 Base.metadata.create_all(bind=engine)

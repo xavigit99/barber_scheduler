@@ -1,7 +1,10 @@
 import logging
+import os
+import smtplib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
+from email.mime.text import MIMEText
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +68,87 @@ class LogNotificationService(NotificationService):
                 "new_start_at": notif.start_at.isoformat(),
             },
         )
+
+
+class SmtpNotificationService(NotificationService):
+    """Sends emails via SMTP. Configured through environment variables."""
+
+    def __init__(self, host: str, port: int, username: str, password: str, sender: str, use_tls: bool = True) -> None:
+        self.host = host
+        self.port = port
+        self.username = username
+        self.password = password
+        self.sender = sender
+        self.use_tls = use_tls
+
+    def _send(self, to: str, subject: str, body: str) -> None:
+        msg = MIMEText(body, "plain", "utf-8")
+        msg["Subject"] = subject
+        msg["From"] = self.sender
+        msg["To"] = to
+        with smtplib.SMTP(self.host, self.port) as smtp:
+            if self.use_tls:
+                smtp.starttls()
+            smtp.login(self.username, self.password)
+            smtp.sendmail(self.sender, [to], msg.as_string())
+
+    def send_confirmation(self, notif: AppointmentNotification) -> None:
+        self._send(
+            to=notif.client_email,
+            subject=f"Agendamento confirmado — {notif.service_name} com {notif.barber_name}",
+            body=(
+                f"Olá {notif.client_name},\n\n"
+                f"O seu agendamento foi confirmado.\n\n"
+                f"  Serviço:  {notif.service_name}\n"
+                f"  Barbeiro: {notif.barber_name}\n"
+                f"  Data:     {notif.start_at:%d/%m/%Y às %H:%M}\n\n"
+                f"ID do agendamento: #{notif.appointment_id}\n"
+            ),
+        )
+
+    def send_cancellation(self, notif: AppointmentNotification) -> None:
+        self._send(
+            to=notif.client_email,
+            subject=f"Agendamento cancelado — {notif.service_name}",
+            body=(
+                f"Olá {notif.client_name},\n\n"
+                f"O seu agendamento foi cancelado.\n\n"
+                f"  Serviço:  {notif.service_name}\n"
+                f"  Barbeiro: {notif.barber_name}\n"
+                f"  Data:     {notif.start_at:%d/%m/%Y às %H:%M}\n\n"
+                f"Se não foi você a cancelar, contacte-nos.\n"
+            ),
+        )
+
+    def send_reschedule(self, notif: AppointmentNotification) -> None:
+        self._send(
+            to=notif.client_email,
+            subject=f"Agendamento remarcado — {notif.service_name} com {notif.barber_name}",
+            body=(
+                f"Olá {notif.client_name},\n\n"
+                f"O seu agendamento foi remarcado.\n\n"
+                f"  Serviço:  {notif.service_name}\n"
+                f"  Barbeiro: {notif.barber_name}\n"
+                f"  Nova data: {notif.start_at:%d/%m/%Y às %H:%M}\n\n"
+                f"ID do agendamento: #{notif.appointment_id}\n"
+            ),
+        )
+
+
+def build_notification_service() -> NotificationService:
+    """Factory — returns SmtpNotificationService if SMTP_HOST is set, else LogNotificationService."""
+    host = os.getenv("SMTP_HOST", "")
+    if not host:
+        logger.warning("SMTP_HOST not configured — using log-only notifications")
+        return LogNotificationService()
+    return SmtpNotificationService(
+        host=host,
+        port=int(os.getenv("SMTP_PORT", "587")),
+        username=os.getenv("SMTP_USERNAME", ""),
+        password=os.getenv("SMTP_PASSWORD", ""),
+        sender=os.getenv("SMTP_SENDER", "noreply@barberpro.app"),
+        use_tls=os.getenv("SMTP_USE_TLS", "true").lower() == "true",
+    )
 
 
 # Singleton — swap for a real implementation via env/DI
