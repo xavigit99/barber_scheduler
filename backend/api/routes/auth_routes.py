@@ -86,11 +86,11 @@ async def change_password(
                 new_password=payload.new_password,
             )
         )
-    except AuthenticationError as exc:
+    except AuthenticationError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
+            detail="Invalid credentials",
+        )
 
 
 @router.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
