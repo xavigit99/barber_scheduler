@@ -9,6 +9,7 @@ from backend.application.commands.public_create_appointment_command import (
 )
 from backend.application.queries.get_available_slots_query import GetAvailableSlotsQuery
 from backend.application.queries.list_barbers_query import ListBarbersQuery
+from backend.application.queries.list_barbershops_query import ListBarbershopsQuery
 from backend.application.queries.list_services_query import ListServicesQuery
 from backend.core.barber import Barber
 from backend.core.exceptions import NotFoundError
@@ -16,6 +17,7 @@ from backend.core.service import Service
 from backend.infrastructure.database import get_db
 from backend.infrastructure.schemas import (
     BarberResponse,
+    BarbershopResponse,
     PublicAppointmentCreateRequest,
     ServiceResponse,
 )
@@ -23,6 +25,12 @@ from meditor import build_mediator
 from repositories.base_repository import BaseRepository
 
 router = APIRouter(prefix="/public", tags=["Public"])
+
+
+@router.get("/barbershops", response_model=list[BarbershopResponse])
+async def public_list_barbershops(db: Session = Depends(get_db)):
+    mediator = build_mediator(db)
+    return await mediator.send(ListBarbershopsQuery(tenant_id=None))
 
 
 @router.get("/tenants/{tenant_id}/barbers", response_model=list[BarberResponse])

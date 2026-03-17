@@ -23,12 +23,13 @@ import MyFeedbackPage from './pages/client/MyFeedbackPage';
 import PublicBookPage from './pages/public/PublicBookPage';
 import ClientRegisterPage from './pages/public/ClientRegisterPage';
 import ClientLoginPage from './pages/public/ClientLoginPage';
+import BarbershopsListPage from './pages/public/BarbershopsListPage';
 
 /* Root redirect — sends user to role-appropriate home */
 function RootRedirect() {
   const { user, loading } = useAuth();
   if (loading) return <Spinner />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/barbershops" replace />;
   const dest = user.role === 'admin' ? '/admin' : user.role === 'barber' ? '/barber' : '/client';
   return <Navigate to={dest} replace />;
 }
@@ -41,6 +42,7 @@ export default function App() {
         <AuthProvider>
           <Routes>
             {/* Public */}
+            <Route path="/barbershops" element={<BarbershopsListPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/book/:tenantId" element={<PublicBookPage />} />
