@@ -8,6 +8,7 @@ from backend.api.auth_http import (
     build_create_user_command,
     build_register_client_command,
 )
+from backend.application.commands.change_password_command import ChangePasswordCommand
 from backend.core.exceptions import AuthenticationError, ConflictError
 from backend.core.roles import ADMIN_ROLE
 from backend.infrastructure.database import get_db
@@ -15,6 +16,7 @@ from backend.infrastructure.schemas import (
     AuthLoginRequest,
     AuthTokenResponse,
     BootstrapAdminRequest,
+    ChangePasswordRequest,
     ClientRegisterRequest,
     UserCreateRequest,
     UserResponse,
@@ -67,6 +69,28 @@ async def register_client(payload: ClientRegisterRequest, db: Session = Depends(
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user=Depends(get_current_user)):
     return current_user
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_password(
+    payload: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    mediator = build_mediator(db)
+    try:
+        await mediator.send(
+            ChangePasswordCommand(
+                user_id=current_user.id,
+                current_password=payload.current_password,
+                new_password=payload.new_password,
+            )
+        )
+    except AuthenticationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
 
 
 @router.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)

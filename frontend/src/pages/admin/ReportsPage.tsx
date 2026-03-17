@@ -68,7 +68,7 @@ export default function ReportsPage() {
     if (!tenantId || !dailyDate) return;
     setDailyLoading(true);
     try {
-      const res = await api.get(`/admin/reports/daily?date=${dailyDate}`);
+      const res = await api.get(`/admin/reports/daily?target_date=${dailyDate}`);
       setDailyAppts(Array.isArray(res.data) ? res.data : []);
     } catch {
       toast('Erro ao carregar agendamentos do dia', 'error');
@@ -85,7 +85,7 @@ export default function ReportsPage() {
     if (!tenantId || !revStart || !revEnd) return;
     setRevLoading(true);
     try {
-      const res = await api.get(`/admin/reports/revenue?start=${revStart}&end=${revEnd}`);
+      const res = await api.get(`/admin/reports/revenue?start_date=${revStart}&end_date=${revEnd}`);
       setRevenue(res.data);
     } catch {
       toast('Erro ao carregar relatório de receita', 'error');
