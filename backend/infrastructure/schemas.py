@@ -342,3 +342,34 @@ class PublicFeedbackResponse(BaseModel):
     rating: int
     comentario: str | None
     created_at: datetime
+
+
+# ── Webhooks ─────────────────────────────────────────────────────────────────
+
+
+class WebhookCreate(BaseModel):
+    url: str
+    secret: str
+    events: list[str]
+
+
+class WebhookResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    tenant_id: int
+    url: str
+    events: list[str]
+    created_at: datetime
+
+
+# ── Recurring Appointments ───────────────────────────────────────────────────
+
+
+class RecurringAppointmentRequest(BaseModel):
+    barber_id: int
+    client_id: int
+    service_id: int
+    data_inicio: datetime
+    recurrence: Literal["weekly", "biweekly"]
+    count: int = Field(ge=1, le=12)

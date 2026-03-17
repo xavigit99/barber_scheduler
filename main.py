@@ -22,6 +22,7 @@ from backend.api.routes.public_routes import router as public_router
 from backend.api.routes.report_routes import router as report_router
 from backend.api.routes.service_routes import router as service_router
 from backend.api.routes.stats_routes import router as stats_router
+from backend.api.routes.webhook_routes import router as webhook_router
 from backend.core.logging_config import setup_logging
 from backend.core.notifications import build_notification_service, set_notification_service
 from backend.infrastructure.database import Base, engine
@@ -82,5 +83,6 @@ app.include_router(report_router)
 app.include_router(audit_router)
 app.include_router(stats_router)
 app.include_router(feedback_router)
+app.include_router(webhook_router)
 
 logger.info("Barber Scheduler API started", extra={"origins": _origins})
