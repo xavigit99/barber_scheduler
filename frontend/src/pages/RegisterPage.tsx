@@ -1,16 +1,18 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import api from '../lib/api';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
 
   const [nome, setNome] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [tenantId, setTenantId] = useState('');
+  const tenantFromUrl = searchParams.get('tenant') ?? '';
+  const [tenantId, setTenantId] = useState(tenantFromUrl);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -200,25 +202,29 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Tenant ID */}
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="reg-tenant" className="text-sm font-medium text-slate-300">
-                  ID da Barbearia
-                </label>
-                <input
-                  id="reg-tenant"
-                  type="number"
-                  min="1"
-                  value={tenantId}
-                  onChange={(e) => setTenantId(e.target.value)}
-                  required
-                  placeholder="Fornecido pela barbearia"
-                  className={errors.tenantId ? inputErrorClasses : inputClasses}
-                />
-                {errors.tenantId && (
-                  <span className="text-xs text-red-400">{errors.tenantId}</span>
-                )}
-              </div>
+              {/* Tenant ID — hidden when pre-filled via URL param */}
+              {tenantFromUrl ? (
+                <input type="hidden" value={tenantId} />
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="reg-tenant" className="text-sm font-medium text-slate-300">
+                    ID da Barbearia
+                  </label>
+                  <input
+                    id="reg-tenant"
+                    type="number"
+                    min="1"
+                    value={tenantId}
+                    onChange={(e) => setTenantId(e.target.value)}
+                    required
+                    placeholder="Fornecido pela barbearia"
+                    className={errors.tenantId ? inputErrorClasses : inputClasses}
+                  />
+                  {errors.tenantId && (
+                    <span className="text-xs text-red-400">{errors.tenantId}</span>
+                  )}
+                </div>
+              )}
 
               {/* Password */}
               <div className="flex flex-col gap-1.5">
