@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import type { Barber, Service, AvailableSlot, PublicFeedback } from '../../types';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
@@ -146,6 +146,12 @@ export default function PublicBookPage() {
           <p className="text-slate-400">
             Receberás uma confirmação em <span className="text-white">{clientEmail}</span>.
           </p>
+          <Link
+            to={`/register?tenant=${tenantId}`}
+            className="block w-full rounded-xl border border-amber-500/50 py-3 text-amber-400 font-medium hover:bg-amber-500/10 transition-colors"
+          >
+            Criar conta para gerir agendamentos
+          </Link>
           <button
             onClick={() => {
               setDone(false);
