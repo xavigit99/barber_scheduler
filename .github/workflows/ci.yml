@@ -48,8 +48,5 @@ jobs:
         run: npm install --legacy-peer-deps
         working-directory: frontend
       - name: TypeScript build
-        run: |
-          echo "Node: $(node --version), npm: $(npm --version)"
-          npx tsc -b 2>&1 && echo "tsc OK" || (echo "tsc FAILED"; exit 1)
-          npx vite build 2>&1
+        run: npm run build
         working-directory: frontend
