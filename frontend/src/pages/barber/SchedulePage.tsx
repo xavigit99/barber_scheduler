@@ -5,7 +5,7 @@ import Table from '../../components/Table';
 import Spinner from '../../components/Spinner';
 import Button from '../../components/Button';
 import { useToast } from '../../components/Toast';
-import type { Appointment } from '../../types';
+import type { Appointment, Client, Service } from '../../types';
 
 const BARBER_ID_KEY = 'barber_my_barber_id';
 
@@ -15,6 +15,8 @@ export default function SchedulePage() {
   const [savedBarberId, setSavedBarberId] = useState(() => localStorage.getItem(BARBER_ID_KEY) ?? '');
   const [targetDate, setTargetDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [clients, setClients] = useState<Record<string, string>>({});
+  const [services, setServices] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
   function saveBarberId() {
@@ -22,6 +24,20 @@ export default function SchedulePage() {
     setSavedBarberId(barberId);
     toast('Barber ID guardado', 'success');
   }
+
+  /* Load client and service maps once */
+  useEffect(() => {
+    Promise.all([api.get('/clients/'), api.get('/services/')])
+      .then(([cRes, sRes]) => {
+        const cMap: Record<string, string> = {};
+        (Array.isArray(cRes.data) ? cRes.data : []).forEach((c: Client) => { cMap[String(c.id)] = c.nome; });
+        const sMap: Record<string, string> = {};
+        (Array.isArray(sRes.data) ? sRes.data : []).forEach((s: Service) => { sMap[String(s.id)] = s.nome; });
+        setClients(cMap);
+        setServices(sMap);
+      })
+      .catch(() => {/* non-critical */});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!savedBarberId || !targetDate) return;
@@ -96,8 +112,8 @@ export default function SchedulePage() {
               render: (a) =>
                 new Date(a.end_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
             },
-            { key: 'client', header: 'Cliente ID', render: (a) => <span className="font-mono text-xs">{a.client_id.slice(0, 8)}...</span> },
-            { key: 'service', header: 'Servico ID', render: (a) => <span className="font-mono text-xs">{a.service_id.slice(0, 8)}...</span> },
+            { key: 'client', header: 'Cliente', render: (a) => clients[String(a.client_id)] ?? <span className="font-mono text-xs">{String(a.client_id).slice(0, 8)}</span> },
+            { key: 'service', header: 'Serviço', render: (a) => services[String(a.service_id)] ?? <span className="font-mono text-xs">{String(a.service_id).slice(0, 8)}</span> },
           ]}
           data={appointments}
           keyExtractor={(a) => a.id}

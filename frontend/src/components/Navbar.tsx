@@ -14,17 +14,21 @@ const adminLinks: NavItem[] = [
   { to: '/admin/clients', label: 'Clientes', requiresTenant: true },
   { to: '/admin/services', label: 'Servicos', requiresTenant: true },
   { to: '/admin/appointments', label: 'Agendamentos', requiresTenant: true },
+  { to: '/admin/reports', label: 'Relatórios', requiresTenant: true },
+  { to: '/admin/compliance', label: 'Compliance', requiresTenant: true },
 ];
 
 const barberLinks: NavItem[] = [
   { to: '/barber', label: 'Minha Agenda' },
   { to: '/barber/blocks', label: 'Bloqueios' },
+  { to: '/barber/availability', label: 'Disponibilidade' },
 ];
 
 const clientLinks: NavItem[] = [
   { to: '/client', label: 'Agendar' },
   { to: '/client/appointments', label: 'Meus Agendamentos' },
   { to: '/client/feedback', label: 'Minhas Avaliações' },
+  { to: '/client/profile', label: 'O meu perfil' },
 ];
 
 export default function Navbar() {
