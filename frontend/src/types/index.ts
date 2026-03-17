@@ -90,6 +90,13 @@ export interface PublicFeedback {
   created_at: string;
 }
 
+export interface Membership {
+  id: number;
+  barber_id: number;
+  barbershop_id: number;
+  role: string;
+}
+
 export interface Feedback {
   id: string;
   appointment_id: string;

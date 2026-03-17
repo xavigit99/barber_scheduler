@@ -7,13 +7,12 @@ import Input from '../../components/Input';
 import Select from '../../components/Select';
 import Spinner from '../../components/Spinner';
 import { useToast } from '../../components/Toast';
+import { useAuth } from '../../contexts/AuthContext';
 import type { BarberBlock } from '../../types';
-
-const BARBER_ID_KEY = 'barber_my_barber_id';
 
 export default function BlocksPage() {
   const { toast } = useToast();
-  const barberId = localStorage.getItem(BARBER_ID_KEY) ?? '';
+  const { barberId } = useAuth();
   const [blocks, setBlocks] = useState<BarberBlock[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -31,7 +30,7 @@ export default function BlocksPage() {
     }
   }
 
-  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [barberId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -60,14 +59,7 @@ export default function BlocksPage() {
     }
   }
 
-  if (!barberId) {
-    return (
-      <div className="py-12 text-center text-slate-500">
-        Configure o seu Barber ID em <a href="/barber" className="text-emerald-600 underline">Minha Agenda</a> primeiro.
-      </div>
-    );
-  }
-
+  if (!barberId) return <Spinner />;
   if (loading) return <Spinner />;
 
   return (
@@ -82,7 +74,7 @@ export default function BlocksPage() {
       <Table
         columns={[
           { key: 'tipo', header: 'Tipo', render: (b) => b.kind },
-          { key: 'inicio', header: 'Inicio', render: (b) => new Date(b.start_at).toLocaleString('pt-PT') },
+          { key: 'inicio', header: 'Início', render: (b) => new Date(b.start_at).toLocaleString('pt-PT') },
           { key: 'fim', header: 'Fim', render: (b) => new Date(b.end_at).toLocaleString('pt-PT') },
           { key: 'motivo', header: 'Motivo', render: (b) => b.reason ?? '-' },
           {
@@ -103,15 +95,15 @@ export default function BlocksPage() {
           <Select
             label="Tipo"
             options={[
-              { value: 'ferias', label: 'Ferias' },
-              { value: 'doenca', label: 'Doenca' },
+              { value: 'ferias', label: 'Férias' },
+              { value: 'doenca', label: 'Doença' },
               { value: 'pessoal', label: 'Pessoal' },
               { value: 'outro', label: 'Outro' },
             ]}
             value={form.tipo}
             onChange={(e) => setForm({ ...form, tipo: e.target.value })}
           />
-          <Input label="Inicio" type="datetime-local" value={form.inicio} onChange={(e) => setForm({ ...form, inicio: e.target.value })} required />
+          <Input label="Início" type="datetime-local" value={form.inicio} onChange={(e) => setForm({ ...form, inicio: e.target.value })} required />
           <Input label="Fim" type="datetime-local" value={form.fim} onChange={(e) => setForm({ ...form, fim: e.target.value })} required />
           <Input label="Motivo (opcional)" value={form.motivo} onChange={(e) => setForm({ ...form, motivo: e.target.value })} />
           <div className="flex justify-end gap-2">

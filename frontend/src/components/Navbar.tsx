@@ -16,6 +16,7 @@ const adminLinks: NavItem[] = [
   { to: '/admin/appointments', label: 'Agendamentos', requiresTenant: true },
   { to: '/admin/reports', label: 'Relatórios', requiresTenant: true },
   { to: '/admin/compliance', label: 'Compliance', requiresTenant: true },
+  { to: '/admin/feedback', label: 'Avaliações', requiresTenant: true },
 ];
 
 const barberLinks: NavItem[] = [
