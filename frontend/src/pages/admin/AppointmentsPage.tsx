@@ -95,7 +95,7 @@ export default function AppointmentsPage() {
     try {
       await api.delete(`/appointments/${id}`);
       toast('Agendamento cancelado', 'success');
-      setAppointments((prev) => prev.filter((a) => a.id !== id));
+      setAppointments((prev) => prev.filter((a) => String(a.id) !== String(id)));
     } catch {
       toast('Erro ao cancelar agendamento', 'error');
     }
