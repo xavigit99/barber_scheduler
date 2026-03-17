@@ -21,7 +21,18 @@
 | F7 | Post-MVP | ✅ Completo | 3 Mai 2026 |
 | F8 | Multi-Tenant Hardening | ✅ Completo | — |
 | F9 | Observabilidade, Auditoria & Compliance | ✅ Completo | — |
-| F10–F11 | Plataforma & Inovação | ⬜ Planeado | Q3 2026 |
+| F12 | Portal do Cliente (frontend) | ✅ Completo | — |
+| F13 | Dashboard de Relatórios (frontend) | ✅ Completo | — |
+| F14 | Reagendamento de Appointments (frontend) | ✅ Completo | — |
+| F15 | Perfil do Cliente (frontend) | ✅ Completo | — |
+| F16 | Painel do Barbeiro Melhorado (frontend) | ✅ Completo | — |
+| F17 | Compliance & Auditoria (frontend) | ✅ Completo | — |
+| F18 | Feedback & Memberships (frontend) | ✅ Completo | — |
+| F19 | Registo de Barbeiro (backend + frontend) | ✅ Completo | — |
+| F20 | CI/CD com GitHub Actions | ✅ Completo | — |
+| F21 | Notificações por Email (SMTP) | ✅ Completo | — |
+| F22 | Docker Production-Ready | ✅ Completo | — |
+| F23–F24 | Plataforma & Inovação | ⬜ Planeado | Q3 2026 |
 
 ---
 
@@ -146,10 +157,26 @@
 
 ---
 
-## F10–F11 — Plataforma & Inovação ⬜ (Alvo: Q3 2026)
+## F12–F22 — Frontend Completo + Infra ✅ (Mar 2026)
 
-- **F10:** API pública para parceiros, onboarding automatizado
-- **F11:** Painel de feedback, agenda multi-slot e recorrente, features avançadas
+- **F12:** Portal do cliente público (registo, login, booking sem conta)
+- **F13:** Dashboard de relatórios admin (KPIs, receita, agendamentos do dia)
+- **F14:** Reagendamento de appointments pelo cliente (modal + slots)
+- **F15:** Perfil do cliente (editar dados + alterar password)
+- **F16:** Painel do barbeiro melhorado (nomes de clientes/serviços + gestão de disponibilidade)
+- **F17:** Compliance & Auditoria UI (audit log, export GDPR, purge)
+- **F18:** Feedback & Memberships UI (avaliações admin, membros por barbearia)
+- **F19:** Registo atómico de barbeiro (User + Barber em transação única)
+- **F20:** CI/CD com GitHub Actions (lint + testes + build frontend em PRs)
+- **F21:** Notificações por email via SMTP (SmtpNotificationService + factory, 10 testes)
+- **F22:** Docker production-ready (Python 3.12, path correto, healthcheck, restart policy)
+
+---
+
+## F23–F24 — Plataforma & Inovação ⬜ (Alvo: Q3 2026)
+
+- **F23:** API pública para parceiros + webhooks de eventos
+- **F24:** Agenda multi-slot e recorrente, notificações SMS/WhatsApp
 
 ---
 
