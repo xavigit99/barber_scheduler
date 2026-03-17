@@ -17,8 +17,8 @@
 | F3 | Disponibilidade e Slots | ✅ Completo | — |
 | F4 | Appointments Core | ✅ Completo | — |
 | F5 | Superfícies Operacionais | ✅ Completo | — |
-| F6 | Produção e Operação | ✅ Completo | 12 Abr 2026 |
-| F7 | Post-MVP | ✅ Completo | 3 Mai 2026 |
+| F6 | Produção e Operação | ✅ Completo | — |
+| F7 | Post-MVP | ✅ Completo | — |
 | F8 | Multi-Tenant Hardening | ✅ Completo | — |
 | F9 | Observabilidade, Auditoria & Compliance | ✅ Completo | — |
 | F12 | Portal do Cliente (frontend) | ✅ Completo | — |
@@ -29,10 +29,8 @@
 | F17 | Compliance & Auditoria (frontend) | ✅ Completo | — |
 | F18 | Feedback & Memberships (frontend) | ✅ Completo | — |
 | F19 | Registo de Barbeiro (backend + frontend) | ✅ Completo | — |
-| F20 | CI/CD com GitHub Actions | ✅ Completo | — |
-| F21 | Notificações por Email (SMTP) | ✅ Completo | — |
-| F22 | Docker Production-Ready | ✅ Completo | — |
-| F23–F24 | Plataforma & Inovação | ⬜ Planeado | Q3 2026 |
+| F20 | CI/CD + Branch Protection | ✅ Completo | — |
+| F21–F22 | Plataforma & Inovação | ⬜ Planeado | Q3 2026 |
 
 ---
 
@@ -157,7 +155,7 @@
 
 ---
 
-## F12–F22 — Frontend Completo + Infra ✅ (Mar 2026)
+## F12–F20 — Frontend Completo ✅ (Mar 2026)
 
 - **F12:** Portal do cliente público (registo, login, booking sem conta)
 - **F13:** Dashboard de relatórios admin (KPIs, receita, agendamentos do dia)
@@ -168,15 +166,13 @@
 - **F18:** Feedback & Memberships UI (avaliações admin, membros por barbearia)
 - **F19:** Registo atómico de barbeiro (User + Barber em transação única)
 - **F20:** CI/CD com GitHub Actions (lint + testes + build frontend em PRs)
-- **F21:** Notificações por email via SMTP (SmtpNotificationService + factory, 10 testes)
-- **F22:** Docker production-ready (Python 3.12, path correto, healthcheck, restart policy)
 
 ---
 
-## F23–F24 — Plataforma & Inovação ⬜ (Alvo: Q3 2026)
+## F21–F22 — Plataforma & Inovação ⬜ (Alvo: Q3 2026)
 
-- **F23:** API pública para parceiros + webhooks de eventos
-- **F24:** Agenda multi-slot e recorrente, notificações SMS/WhatsApp
+- **F21:** API pública para parceiros, onboarding automatizado
+- **F22:** Agenda multi-slot e recorrente, notificações reais (email/WhatsApp)
 
 ---
 
@@ -187,9 +183,10 @@
 | F6 Produção | Migrations + CI/CD + Logging + Segurança + Docs | 2 semanas | 12 Abr 2026 |
 | F7 Post-MVP | Public booking + Notificações + Relatórios | 3 semanas | 3 Mai 2026 |
 | F8 Multi-Tenant | Memberships + Soft-delete + RBAC + Queries | 2 semanas | 17 Mai 2026 |
-| F9–F11 Plataforma | Observabilidade, APIs externas, Inovação | 6 semanas | Q3 2026 |
+| F9–F20 Frontend & CI | UI completa + CI/CD | ✅ Completo | Mar 2026 |
+| F21–F22 Plataforma | APIs externas, Inovação | 4 semanas | Q3 2026 |
 
-**MVP completo estimado:** finais de abril de 2026
+**MVP completo:** março de 2026 ✅
 
 ---
 
@@ -204,8 +201,8 @@
 - [x] Agenda diária disponível
 - [x] `main.py` corrigido — todos os endpoints acessíveis
 - [x] Tenant isolation completo em appointments
-- [ ] Migrations formais (Alembic)
-- [x] CI com lint e migration check
+- [x] Migrations formais (Alembic — delta migrations para schema existente)
+- [x] CI com lint, testes e build frontend
 - [x] Logging estruturado
 - [ ] Healthcheck estável
 - [x] CORS, rate limiting, security headers
