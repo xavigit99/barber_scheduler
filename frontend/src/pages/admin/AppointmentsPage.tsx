@@ -96,6 +96,9 @@ export default function AppointmentsPage() {
         toast('Agendamento criado', 'success');
       }
       setModalOpen(false);
+      setIsRecurring(false);
+      setRecurrence('weekly');
+      setRecurrenceCount(4);
       const res = await api.get(`/appointments/barbers/${selectedBarber}?target_date=${targetDate}`);
       setAppointments(Array.isArray(res.data) ? res.data : []);
     } catch (err: unknown) {
@@ -126,6 +129,23 @@ export default function AppointmentsPage() {
   }
   function serviceName(id: string | number): string {
     return services.find((s) => String(s.id) === String(id))?.nome ?? String(id);
+  }
+
+  function computeRecurringDates(): string[] {
+    if (!createForm.data_inicio || !isRecurring) return [];
+    const dates: string[] = [];
+    const start = new Date(createForm.data_inicio);
+    if (isNaN(start.getTime())) return [];
+    const intervalDays = recurrence === 'weekly' ? 7 : 14;
+    for (let i = 0; i < recurrenceCount; i++) {
+      const d = new Date(start.getTime() + i * intervalDays * 24 * 60 * 60 * 1000);
+      dates.push(
+        d.toLocaleDateString('pt-PT', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) +
+        ' ' +
+        d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+      );
+    }
+    return dates;
   }
 
   if (!tenantId) {
@@ -246,7 +266,7 @@ export default function AppointmentsPage() {
           {isRecurring && (
             <div className="space-y-3 rounded border border-slate-200 bg-slate-50 p-3">
               <Select
-                label="Frequencia"
+                label="Frequência"
                 options={[
                   { value: 'weekly', label: 'Semanal' },
                   { value: 'biweekly', label: 'Quinzenal' },
@@ -262,6 +282,22 @@ export default function AppointmentsPage() {
                 min={1}
                 max={12}
               />
+              {(() => {
+                const dates = computeRecurringDates();
+                if (dates.length === 0) return null;
+                return (
+                  <div className="mt-2">
+                    <p className="mb-1 text-xs font-medium text-slate-600">Datas previstas:</p>
+                    <ul className="max-h-40 overflow-y-auto space-y-0.5">
+                      {dates.map((d, i) => (
+                        <li key={i} className="text-xs text-slate-500">
+                          {i + 1}. {d}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
