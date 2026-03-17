@@ -185,7 +185,8 @@ class AvailabilityHandlersTestCase(unittest.IsolatedAsyncioTestCase):
         availability_query = MagicMock()
         blocks_query = MagicMock()
 
-        db.query.side_effect = [barber_query, service_query, availability_query, blocks_query]
+        appointments_query = MagicMock()
+        db.query.side_effect = [barber_query, service_query, availability_query, blocks_query, appointments_query]
         barber_query.filter.return_value = barber_query
         barber_query.first.return_value = object()
         service_query.filter.return_value = service_query
@@ -207,6 +208,8 @@ class AvailabilityHandlersTestCase(unittest.IsolatedAsyncioTestCase):
                 end_at=datetime(2026, 3, 16, 10, 30),
             )
         ]
+        appointments_query.filter.return_value = appointments_query
+        appointments_query.all.return_value = []  # no existing appointments
 
         handler = GetAvailableSlotsHandler(db)
 

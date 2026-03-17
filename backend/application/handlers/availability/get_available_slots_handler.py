@@ -4,6 +4,7 @@ from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.queries.get_available_slots_query import GetAvailableSlotsQuery
+from backend.core.appointment import Appointment
 from backend.core.barber import Barber
 from backend.core.barber_availability import BarberAvailability
 from backend.core.barber_block import BarberBlock
@@ -41,6 +42,7 @@ class GetAvailableSlotsHandler(RequestHandler[GetAvailableSlotsQuery, dict]):
 
         day_start = datetime.combine(query.target_date, time.min)
         day_end = day_start + timedelta(days=1)
+
         blocks = (
             self.db.query(BarberBlock)
             .filter(
@@ -53,6 +55,26 @@ class GetAvailableSlotsHandler(RequestHandler[GetAvailableSlotsQuery, dict]):
             .all()
         )
 
+        # Treat existing appointments as occupied blocks so their slots are hidden
+        existing_appointments = (
+            self.db.query(Appointment)
+            .filter(
+                Appointment.barber_id == query.barber_id,
+                Appointment.deleted.is_(False),
+                Appointment.start_at < day_end,
+                Appointment.end_at > day_start,
+            )
+            .all()
+        )
+
+        # Adapt appointments to the duck-typed block interface expected by build_daily_slots
+        class _ApptBlock:
+            def __init__(self, appt: Appointment):
+                self.start_at = appt.start_at
+                self.end_at = appt.end_at
+
+        all_blocks = list(blocks) + [_ApptBlock(a) for a in existing_appointments]
+
         return {
             "barber_id": query.barber_id,
             "service_id": query.service_id,
@@ -62,7 +84,7 @@ class GetAvailableSlotsHandler(RequestHandler[GetAvailableSlotsQuery, dict]):
                 target_date=query.target_date,
                 timezone_name=query.timezone,
                 availability_windows=availability_windows,
-                blocks=blocks,
+                blocks=all_blocks,
                 service_duration_minutes=service.duracao_minutos,
             ),
         }
