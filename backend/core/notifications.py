@@ -17,6 +17,8 @@ class AppointmentNotification:
     service_name: str
     start_at: datetime
     appointment_id: int
+    confirmation_token: str | None = None
+    app_base_url: str | None = None
 
 
 class NotificationService(ABC):
@@ -28,6 +30,9 @@ class NotificationService(ABC):
 
     @abstractmethod
     def send_reschedule(self, notif: AppointmentNotification) -> None: ...
+
+    @abstractmethod
+    def send_reminder(self, notif: AppointmentNotification) -> None: ...
 
 
 class LogNotificationService(NotificationService):
@@ -69,6 +74,17 @@ class LogNotificationService(NotificationService):
             },
         )
 
+    def send_reminder(self, notif: AppointmentNotification) -> None:
+        logger.info(
+            "Appointment reminder",
+            extra={
+                "event": "appointment.reminder",
+                "appointment_id": notif.appointment_id,
+                "client_email": notif.client_email,
+                "start_at": notif.start_at.isoformat(),
+            },
+        )
+
 
 class SmtpNotificationService(NotificationService):
     """Sends emails via SMTP. Configured through environment variables."""
@@ -93,6 +109,13 @@ class SmtpNotificationService(NotificationService):
             smtp.sendmail(self.sender, [to], msg.as_string())
 
     def send_confirmation(self, notif: AppointmentNotification) -> None:
+        confirm_section = ""
+        if notif.confirmation_token and notif.app_base_url:
+            confirm_url = f"{notif.app_base_url}/appointments/confirm/{notif.confirmation_token}"
+            confirm_section = (
+                f"\nConfirme a sua presença clicando no link abaixo:\n"
+                f"  {confirm_url}\n"
+            )
         self._send(
             to=notif.client_email,
             subject=f"Agendamento confirmado — {notif.service_name} com {notif.barber_name}",
@@ -101,7 +124,8 @@ class SmtpNotificationService(NotificationService):
                 f"O seu agendamento foi confirmado.\n\n"
                 f"  Serviço:  {notif.service_name}\n"
                 f"  Barbeiro: {notif.barber_name}\n"
-                f"  Data:     {notif.start_at:%d/%m/%Y às %H:%M}\n\n"
+                f"  Data:     {notif.start_at:%d/%m/%Y às %H:%M}\n"
+                f"{confirm_section}\n"
                 f"ID do agendamento: #{notif.appointment_id}\n"
             ),
         )
@@ -130,6 +154,20 @@ class SmtpNotificationService(NotificationService):
                 f"  Serviço:  {notif.service_name}\n"
                 f"  Barbeiro: {notif.barber_name}\n"
                 f"  Nova data: {notif.start_at:%d/%m/%Y às %H:%M}\n\n"
+                f"ID do agendamento: #{notif.appointment_id}\n"
+            ),
+        )
+
+    def send_reminder(self, notif: AppointmentNotification) -> None:
+        self._send(
+            to=notif.client_email,
+            subject=f"Lembrete: {notif.service_name} amanhã com {notif.barber_name}",
+            body=(
+                f"Olá {notif.client_name},\n\n"
+                f"Este é um lembrete do seu agendamento de amanhã.\n\n"
+                f"  Serviço:  {notif.service_name}\n"
+                f"  Barbeiro: {notif.barber_name}\n"
+                f"  Data:     {notif.start_at:%d/%m/%Y às %H:%M}\n\n"
                 f"ID do agendamento: #{notif.appointment_id}\n"
             ),
         )
