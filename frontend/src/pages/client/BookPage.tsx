@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../../lib/api';
+import api, { getApiError } from '../../lib/api';
 import Button from '../../components/Button';
 import Select from '../../components/Select';
 import Input from '../../components/Input';
@@ -37,8 +37,8 @@ export default function BookPage() {
         ]);
         setBarbers(Array.isArray(bRes.data) ? bRes.data : []);
         setServices(Array.isArray(sRes.data) ? sRes.data : []);
-      } catch {
-        toast('Erro ao carregar dados', 'error');
+      } catch (err) {
+        toast(getApiError(err, 'Erro ao carregar dados'), 'error');
       } finally {
         setLoading(false);
       }
@@ -58,8 +58,8 @@ export default function BookPage() {
         const data = res.data?.slots ?? res.data;
         setSlots(Array.isArray(data) ? data : []);
       })
-      .catch(() => {
-        toast('Erro ao carregar horarios', 'error');
+      .catch((err) => {
+        toast(getApiError(err, 'Erro ao carregar horarios'), 'error');
         setSlots([]);
       })
       .finally(() => setLoadingSlots(false));
@@ -82,8 +82,8 @@ export default function BookPage() {
       setSelectedService('');
       setTargetDate('');
       setSelectedSlot(null);
-    } catch {
-      toast('Erro ao criar agendamento', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao criar agendamento'), 'error');
     } finally {
       setSubmitting(false);
     }

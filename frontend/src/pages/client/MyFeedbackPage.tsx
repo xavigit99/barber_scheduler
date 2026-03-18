@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../lib/api';
+import api, { getApiError } from '../../lib/api';
 import Spinner from '../../components/Spinner';
 import { useToast } from '../../components/Toast';
 import type { Feedback } from '../../types';
@@ -33,8 +33,8 @@ export default function MyFeedbackPage() {
           bMap[String(b.id)] = b.nome;
         });
         setBarbers(bMap);
-      } catch {
-        toast('Erro ao carregar avaliações', 'error');
+      } catch (err) {
+        toast(getApiError(err, 'Erro ao carregar avaliações'), 'error');
       } finally {
         setLoading(false);
       }

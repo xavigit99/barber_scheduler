@@ -15,22 +15,29 @@ class RegisterClientHandler(RequestHandler[RegisterClientCommand, object]):
         self.db = db
 
     async def handle(self, command: RegisterClientCommand):
-        existing = (
+        existing_user = (
             self.db.query(User)
             .filter(or_(User.username == command.username, User.email == command.email))
             .first()
         )
-        if existing is not None:
-            raise ConflictError("User with this username or email already exists")
 
-        user = User(
-            username=command.username,
-            email=command.email,
-            password_hash=hash_password(command.password),
-            role="client",
-        )
-        self.db.add(user)
-        self.db.flush()  # get user.id without committing
+        if existing_user is not None:
+            user_roles = set(existing_user.role.split(","))
+            if "client" in user_roles:
+                raise ConflictError("User with this username or email already exists")
+            user_roles.add("client")
+            existing_user.role = ",".join(sorted(user_roles))
+            user = existing_user
+            self.db.flush()
+        else:
+            user = User(
+                username=command.username,
+                email=command.email,
+                password_hash=hash_password(command.password),
+                role="client",
+            )
+            self.db.add(user)
+            self.db.flush()
 
         client = Client(
             nome=command.nome,

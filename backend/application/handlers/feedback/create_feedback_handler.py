@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
@@ -37,7 +37,7 @@ class CreateFeedbackHandler(RequestHandler[CreateFeedbackCommand, object]):
         if client.id != appointment.client_id:
             raise ForbiddenError("You can only review your own appointments")
 
-        if appointment.end_at > datetime.now():
+        if appointment.end_at > datetime.now(UTC).replace(tzinfo=None):
             raise ValidationError("Cannot review a future appointment")
 
         existing = (

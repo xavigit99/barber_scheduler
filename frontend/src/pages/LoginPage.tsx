@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { getApiError } from '../lib/api';
 import { useToast } from '../components/Toast';
 
 export default function LoginPage() {
@@ -19,8 +20,8 @@ export default function LoginPage() {
       const user = await login(username, password);
       const dest = user.role === 'admin' ? '/admin' : user.role === 'barber' ? '/barber' : '/client';
       navigate(dest, { replace: true });
-    } catch {
-      toast('Credenciais invalidas', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Credenciais invalidas'), 'error');
     } finally {
       setLoading(false);
     }

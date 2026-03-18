@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../../lib/api';
+import api, { getApiError } from '../../lib/api';
 import Input from '../../components/Input';
 import Table from '../../components/Table';
 import Spinner from '../../components/Spinner';
@@ -36,8 +36,8 @@ export default function SchedulePage() {
     api
       .get(`/appointments/barbers/${barberId}?target_date=${targetDate}`)
       .then((res) => setAppointments(Array.isArray(res.data) ? res.data : []))
-      .catch(() => {
-        toast('Erro ao carregar agenda', 'error');
+      .catch((err) => {
+        toast(getApiError(err, 'Erro ao carregar agenda'), 'error');
         setAppointments([]);
       })
       .finally(() => setLoading(false));

@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../lib/api';
+import api, { getApiError } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import Table from '../../components/Table';
 import Button from '../../components/Button';
@@ -23,8 +23,8 @@ export default function ServicesPage() {
     try {
       const res = await api.get('/services/');
       setServices(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      toast('Erro ao carregar servicos', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao carregar servicos'), 'error');
     } finally {
       setLoading(false);
     }
@@ -59,8 +59,8 @@ export default function ServicesPage() {
       }
       setModalOpen(false);
       load();
-    } catch {
-      toast('Erro ao guardar servico', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao guardar servico'), 'error');
     }
   }
 
@@ -70,8 +70,8 @@ export default function ServicesPage() {
       await api.delete(`/services/${id}`);
       toast('Servico eliminado', 'success');
       load();
-    } catch {
-      toast('Erro ao eliminar servico', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao eliminar servico'), 'error');
     }
   }
 

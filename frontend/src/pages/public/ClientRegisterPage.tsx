@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '../../components/Toast';
-import api from '../../lib/api';
+import api, { getApiError } from '../../lib/api';
 
 export default function ClientRegisterPage() {
   const { tenantId } = useParams<{ tenantId: string }>();
@@ -46,18 +46,8 @@ export default function ClientRegisterPage() {
       });
       toast('Conta criada! Podes entrar agora.', 'success');
       navigate('/login', { replace: true });
-    } catch (err: unknown) {
-      let message = 'Erro ao criar conta. Tenta novamente.';
-      if (
-        typeof err === 'object' &&
-        err !== null &&
-        'response' in err &&
-        typeof (err as Record<string, unknown>).response === 'object'
-      ) {
-        const resp = (err as { response: { data?: { detail?: string } } }).response;
-        if (resp.data?.detail) message = resp.data.detail;
-      }
-      toast(message, 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao criar conta. Tenta novamente.'), 'error');
     } finally {
       setLoading(false);
     }

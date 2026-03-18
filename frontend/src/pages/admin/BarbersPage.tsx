@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../lib/api';
+import api, { getApiError } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import Table from '../../components/Table';
 import Button from '../../components/Button';
@@ -23,8 +23,8 @@ export default function BarbersPage() {
     try {
       const res = await api.get('/barbers/');
       setBarbers(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      toast('Erro ao carregar barbeiros', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao carregar barbeiros'), 'error');
     } finally {
       setLoading(false);
     }
@@ -65,8 +65,8 @@ export default function BarbersPage() {
       }
       setModalOpen(false);
       load();
-    } catch {
-      toast('Erro ao guardar barbeiro', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao guardar barbeiro'), 'error');
     }
   }
 
@@ -76,8 +76,8 @@ export default function BarbersPage() {
       await api.delete(`/barbers/${id}`);
       toast('Barbeiro eliminado', 'success');
       load();
-    } catch {
-      toast('Erro ao eliminar barbeiro', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao eliminar barbeiro'), 'error');
     }
   }
 

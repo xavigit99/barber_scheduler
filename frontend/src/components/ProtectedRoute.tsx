@@ -2,10 +2,9 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Spinner from './Spinner';
 import Navbar from './Navbar';
-import type { Role } from '../types';
 
 interface Props {
-  allowedRoles?: Role[];
+  allowedRoles?: string[];
 }
 
 export default function ProtectedRoute({ allowedRoles }: Props) {
@@ -15,10 +14,14 @@ export default function ProtectedRoute({ allowedRoles }: Props) {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    /* redirect to role-appropriate home */
-    const home = user.role === 'admin' ? '/admin' : user.role === 'barber' ? '/barber' : '/client';
-    return <Navigate to={home} replace />;
+  if (allowedRoles) {
+    const userRoles = user.role.split(',');
+    const hasRole = allowedRoles.some((r) => userRoles.includes(r));
+    if (!hasRole) {
+      /* redirect to role-appropriate home */
+      const home = userRoles.includes('admin') ? '/admin' : userRoles.includes('barber') ? '/barber' : '/client';
+      return <Navigate to={home} replace />;
+    }
   }
 
   return (

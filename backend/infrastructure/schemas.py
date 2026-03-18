@@ -3,8 +3,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from backend.core.roles import ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE
-
 
 class BarberBase(BaseModel):
     nome: str
@@ -191,7 +189,7 @@ class ServiceResponse(ServiceBase):
 class UserBase(BaseModel):
     username: str
     email: str
-    role: Literal[ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE]
+    role: str  # comma-separated roles, e.g. "barber,client"
 
 
 class UserResponse(UserBase):

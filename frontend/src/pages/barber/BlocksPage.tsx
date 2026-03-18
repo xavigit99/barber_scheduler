@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import api from '../../lib/api';
+import api, { getApiError } from '../../lib/api';
 import Table from '../../components/Table';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal';
@@ -23,8 +23,8 @@ export default function BlocksPage() {
     try {
       const res = await api.get(`/barbers/${barberId}/availability/blocks`);
       setBlocks(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      toast('Erro ao carregar bloqueios', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao carregar bloqueios'), 'error');
     } finally {
       setLoading(false);
     }
@@ -44,8 +44,8 @@ export default function BlocksPage() {
       toast('Bloqueio adicionado', 'success');
       setModalOpen(false);
       load();
-    } catch {
-      toast('Erro ao adicionar bloqueio', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao adicionar bloqueio'), 'error');
     }
   }
 
@@ -54,8 +54,8 @@ export default function BlocksPage() {
       await api.delete(`/barbers/${barberId}/availability/blocks/${blockId}`);
       toast('Bloqueio removido', 'success');
       load();
-    } catch {
-      toast('Erro ao remover bloqueio', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao remover bloqueio'), 'error');
     }
   }
 

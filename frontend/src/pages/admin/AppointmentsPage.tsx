@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../lib/api';
+import api, { getApiError } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import Table from '../../components/Table';
 import Button from '../../components/Button';
@@ -33,6 +33,10 @@ export default function AppointmentsPage() {
     service_id: '',
     data_inicio: '',
   });
+  const [modalDate, setModalDate] = useState('');
+  const [availableSlots, setAvailableSlots] = useState<{ inicio: string; fim: string }[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrence, setRecurrence] = useState<'weekly' | 'biweekly'>('weekly');
   const [recurrenceCount, setRecurrenceCount] = useState(4);
@@ -51,14 +55,38 @@ export default function AppointmentsPage() {
         setClients(Array.isArray(cRes.data) ? cRes.data : []);
         setServices(Array.isArray(sRes.data) ? sRes.data : []);
         if (b.length > 0) setSelectedBarber(b[0].id);
-      } catch {
-        toast('Erro ao carregar dados', 'error');
+      } catch (err) {
+        toast(getApiError(err, 'Erro ao carregar dados'), 'error');
       } finally {
         setLoading(false);
       }
     }
     load();
   }, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* fetch available slots when barber + service + date are set in the create modal */
+  useEffect(() => {
+    if (!createForm.barber_id || !createForm.service_id || !modalDate) {
+      setAvailableSlots([]);
+      setSelectedSlot('');
+      return;
+    }
+    setLoadingSlots(true);
+    api
+      .get(`/barbers/${createForm.barber_id}/availability/slots`, {
+        params: {
+          service_id: createForm.service_id,
+          target_date: modalDate,
+          timezone: 'Europe/Lisbon',
+        },
+      })
+      .then((res) => {
+        setAvailableSlots(Array.isArray(res.data?.slots) ? res.data.slots : []);
+        setSelectedSlot('');
+      })
+      .catch(() => setAvailableSlots([]))
+      .finally(() => setLoadingSlots(false));
+  }, [createForm.barber_id, createForm.service_id, modalDate]);
 
   /* load appointments for selected barber + date */
   useEffect(() => {
@@ -96,14 +124,13 @@ export default function AppointmentsPage() {
         toast('Agendamento criado', 'success');
       }
       setModalOpen(false);
+      setIsRecurring(false);
+      setRecurrence('weekly');
+      setRecurrenceCount(4);
       const res = await api.get(`/appointments/barbers/${selectedBarber}?target_date=${targetDate}`);
       setAppointments(Array.isArray(res.data) ? res.data : []);
-    } catch (err: unknown) {
-      const detail =
-        typeof err === 'object' && err !== null && 'response' in err
-          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
-          : null;
-      toast(detail ?? 'Erro ao criar agendamento', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao criar agendamento'), 'error');
     }
   }
 
@@ -113,8 +140,8 @@ export default function AppointmentsPage() {
       await api.delete(`/appointments/${id}`);
       toast('Agendamento cancelado', 'success');
       setAppointments((prev) => prev.filter((a) => String(a.id) !== String(id)));
-    } catch {
-      toast('Erro ao cancelar agendamento', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao cancelar agendamento'), 'error');
     }
   }
 
@@ -126,6 +153,23 @@ export default function AppointmentsPage() {
   }
   function serviceName(id: string | number): string {
     return services.find((s) => String(s.id) === String(id))?.nome ?? String(id);
+  }
+
+  function computeRecurringDates(): string[] {
+    if (!createForm.data_inicio || !isRecurring) return [];
+    const dates: string[] = [];
+    const start = new Date(createForm.data_inicio);
+    if (isNaN(start.getTime())) return [];
+    const intervalDays = recurrence === 'weekly' ? 7 : 14;
+    for (let i = 0; i < recurrenceCount; i++) {
+      const d = new Date(start.getTime() + i * intervalDays * 24 * 60 * 60 * 1000);
+      dates.push(
+        d.toLocaleDateString('pt-PT', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) +
+        ' ' +
+        d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+      );
+    }
+    return dates;
   }
 
   if (!tenantId) {
@@ -144,6 +188,9 @@ export default function AppointmentsPage() {
         <h1 className="text-2xl font-semibold text-slate-800">Agendamentos</h1>
         <Button onClick={() => {
           setCreateForm({ barber_id: selectedBarber || '', client_id: '', service_id: '', data_inicio: '' });
+          setModalDate('');
+          setAvailableSlots([]);
+          setSelectedSlot('');
           setModalOpen(true);
         }}>
           + Novo Agendamento
@@ -225,12 +272,41 @@ export default function AppointmentsPage() {
             placeholder="Selecione..."
           />
           <Input
-            label="Data e Hora"
-            type="datetime-local"
-            value={createForm.data_inicio}
-            onChange={(e) => setCreateForm({ ...createForm, data_inicio: e.target.value })}
+            label="Data"
+            type="date"
+            value={modalDate}
+            onChange={(e) => {
+              setModalDate(e.target.value);
+              setCreateForm({ ...createForm, data_inicio: '' });
+              setSelectedSlot('');
+            }}
             required
           />
+
+          {modalDate && createForm.barber_id && createForm.service_id && (
+            loadingSlots ? (
+              <p className="text-xs text-slate-500">A carregar horários...</p>
+            ) : availableSlots.length === 0 ? (
+              <p className="text-xs text-slate-500">Sem horários disponíveis para este dia.</p>
+            ) : (
+              <Select
+                label="Horário"
+                options={availableSlots.map((s) => ({
+                  value: s.inicio,
+                  label: new Date(s.inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) +
+                    ' – ' +
+                    new Date(s.fim).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+                }))}
+                value={selectedSlot}
+                onChange={(e) => {
+                  setSelectedSlot(e.target.value);
+                  setCreateForm({ ...createForm, data_inicio: e.target.value });
+                }}
+                placeholder="Selecione um horário..."
+              />
+            )
+          )}
+
 
           {/* Recurring toggle */}
           <label className="flex items-center gap-2 text-sm text-slate-700">
@@ -246,7 +322,7 @@ export default function AppointmentsPage() {
           {isRecurring && (
             <div className="space-y-3 rounded border border-slate-200 bg-slate-50 p-3">
               <Select
-                label="Frequencia"
+                label="Frequência"
                 options={[
                   { value: 'weekly', label: 'Semanal' },
                   { value: 'biweekly', label: 'Quinzenal' },
@@ -262,6 +338,22 @@ export default function AppointmentsPage() {
                 min={1}
                 max={12}
               />
+              {(() => {
+                const dates = computeRecurringDates();
+                if (dates.length === 0) return null;
+                return (
+                  <div className="mt-2">
+                    <p className="mb-1 text-xs font-medium text-slate-600">Datas previstas:</p>
+                    <ul className="max-h-40 overflow-y-auto space-y-0.5">
+                      {dates.map((d, i) => (
+                        <li key={i} className="text-xs text-slate-500">
+                          {i + 1}. {d}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
