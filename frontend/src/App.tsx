@@ -19,6 +19,16 @@ import ReportsPage from './pages/admin/ReportsPage';
 import CompliancePage from './pages/admin/CompliancePage';
 import WebhooksPage from './pages/admin/WebhooksPage';
 import AdminFeedbackPage from './pages/admin/AdminFeedbackPage';
+import PacksPage from './pages/admin/PacksPage';
+import LoyaltyPage from './pages/admin/LoyaltyPage';
+import CampaignsPage from './pages/admin/CampaignsPage';
+import PaymentsPage from './pages/admin/PaymentsPage';
+import InvoicesPage from './pages/admin/InvoicesPage';
+import StocksPage from './pages/admin/StocksPage';
+import ResourcesPage from './pages/admin/ResourcesPage';
+import ClinicalPage from './pages/admin/ClinicalPage';
+import SAFTPage from './pages/admin/SAFTPage';
+import ClientSegmentPage from './pages/admin/ClientSegmentPage';
 import SchedulePage from './pages/barber/SchedulePage';
 import BlocksPage from './pages/barber/BlocksPage';
 import AvailabilityPage from './pages/barber/AvailabilityPage';
@@ -26,6 +36,8 @@ import BookPage from './pages/client/BookPage';
 import MyAppointmentsPage from './pages/client/MyAppointmentsPage';
 import MyFeedbackPage from './pages/client/MyFeedbackPage';
 import ProfilePage from './pages/client/ProfilePage';
+import MyPacksPage from './pages/client/MyPacksPage';
+import MyLoyaltyPage from './pages/client/MyLoyaltyPage';
 import PublicBookPage from './pages/public/PublicBookPage';
 import ClientRegisterPage from './pages/public/ClientRegisterPage';
 import ClientLoginPage from './pages/public/ClientLoginPage';
@@ -71,6 +83,16 @@ export default function App() {
               <Route path="/admin/webhooks" element={<WebhooksPage />} />
               <Route path="/admin/compliance" element={<CompliancePage />} />
               <Route path="/admin/feedback" element={<AdminFeedbackPage />} />
+              <Route path="/admin/packs" element={<PacksPage />} />
+              <Route path="/admin/loyalty" element={<LoyaltyPage />} />
+              <Route path="/admin/campaigns" element={<CampaignsPage />} />
+              <Route path="/admin/payments" element={<PaymentsPage />} />
+              <Route path="/admin/invoices" element={<InvoicesPage />} />
+              <Route path="/admin/stocks" element={<StocksPage />} />
+              <Route path="/admin/resources" element={<ResourcesPage />} />
+              <Route path="/admin/clinical" element={<ClinicalPage />} />
+              <Route path="/admin/saft" element={<SAFTPage />} />
+              <Route path="/admin/clients/segment" element={<ClientSegmentPage />} />
             </Route>
 
             {/* Barber routes */}
@@ -86,6 +108,8 @@ export default function App() {
               <Route path="/client/appointments" element={<MyAppointmentsPage />} />
               <Route path="/client/feedback" element={<MyFeedbackPage />} />
               <Route path="/client/profile" element={<ProfilePage />} />
+              <Route path="/client/packs" element={<MyPacksPage />} />
+              <Route path="/client/loyalty" element={<MyLoyaltyPage />} />
             </Route>
 
             {/* Catch-all */}

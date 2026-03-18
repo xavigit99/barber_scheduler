@@ -3,7 +3,7 @@
 > Sistema de gestão de barbearias construído em FastAPI + SQLAlchemy com arquitetura CQRS via Mediator (`diator`).
 > Suporte a múltiplos perfis (`admin`, `barbeiro`, `cliente`) com multi-tenant foundation.
 >
-> **Última atualização:** 18 de março de 2026 · branch `feature/f32-f35-segmentation-campaigns-payments-invoicing`
+> **Última atualização:** 18 de março de 2026 · branch `feature/f25-f27-reminders-recurring-group`
 
 ---
 
@@ -22,7 +22,8 @@
 | F25–F27 | Lembretes + Confirmação + Grupo | ✅ Completo | PR #32 |
 | F28–F31 | Packs + Fidelização + Aniversários | ✅ Completo | PR #33 |
 | F32–F35 | Segmentação + Campanhas + Pagamentos + Faturação | ✅ Completo | PR #34 |
-| F36–F41 | SAF-T + Stocks + Salas + QR + Widget + Clínicas | 🔄 Em curso | `feature/f36-f41-stocks-rooms-qr-widget-clinical` |
+| F36–F41 | SAF-T + Stocks + Salas + QR + Widget + Clínicas | ✅ Completo | PR #35 |
+| Frontend F25–F41 | Páginas React para features novas | 🔄 Em curso | `feature/f25-f27-reminders-recurring-group` |
 
 ---
 
@@ -128,39 +129,22 @@
 - **F34 Pagamentos online:** `payment_status` em `Appointment`; Stripe Checkout + webhook; graceful degradation sem `STRIPE_SECRET_KEY`
 - **F35 Faturação certificada:** modelo `Invoice`; InvoiceXpress API ou draft local; migração `d4e5f6a7b8c9`
 
+### F36–F41 — SAF-T + Stocks + Salas + QR + Widget + Clínicas ✅ (PR #35)
+- **F36 SAF-T Export:** Exportação SAF-T-PT stub (JSON estruturado). `GET /admin/saft?year=2026` — agrega dados de agendamentos por serviço, calcula receita total e por serviço
+- **F37 Gestão de Stocks:** `Product` (nome, stock_atual, stock_minimo, preco_unitario). `ServiceProduct` liga produto a serviço. Dedução automática de stock. Endpoints CRUD + ajuste de stock + filtro low_stock
+- **F38 Gestão de Salas/Recursos:** `Resource` (nome, tipo: sala/cadeira/equipamento). `resource_id` opcional no agendamento. Validação de dupla ocupação. Endpoints CRUD admin
+- **F39 QR Code de Marcação:** `GET /public/qr/{tenant_id}` — gera QR code PNG para booking público
+- **F40 Widget Embed:** `GET /public/widget/{tenant_id}` — snippet JavaScript que embute iframe de booking
+- **F41 Fichas Clínicas:** `ClinicalRecord` + `ClinicalNote`. Consentimento digital. Endpoints CRUD admin/barbeiro. Migração `e5f6a7b8c9d0`
+
 ---
 
 ## Em Curso
 
-### F36 — SAF-T Export 🔄
-**Branch:** `feature/f36-f41-stocks-rooms-qr-widget-clinical`
+### Frontend F25–F41 — Páginas React para features novas 🔄
+**Branch:** `feature/f25-f27-reminders-recurring-group`
 
-Exportação SAF-T-PT stub (JSON estruturado). `GET /admin/saft?year=2026` — agrega dados de agendamentos por serviço, calcula receita total e por serviço. Admin only.
-
-### F37 — Gestão de Stocks 🔄
-**Branch:** `feature/f36-f41-stocks-rooms-qr-widget-clinical`
-
-`Product` (nome, stock_atual, stock_minimo, preco_unitario). `ServiceProduct` liga produto a serviço com quantidade consumida. Dedução automática de stock ao criar agendamento. Endpoints CRUD + ajuste de stock + filtro low_stock.
-
-### F38 — Gestão de Salas/Recursos 🔄
-**Branch:** `feature/f36-f41-stocks-rooms-qr-widget-clinical`
-
-`Resource` (nome, tipo: sala/cadeira/equipamento). `resource_id` opcional no agendamento. Validação de dupla ocupação (overlap check). Endpoints CRUD admin.
-
-### F39 — QR Code de Marcação 🔄
-**Branch:** `feature/f36-f41-stocks-rooms-qr-widget-clinical`
-
-`GET /public/qr/{tenant_id}` — gera QR code PNG que aponta para o booking público. Usa `qrcode[pil]`.
-
-### F40 — Widget Embed 🔄
-**Branch:** `feature/f36-f41-stocks-rooms-qr-widget-clinical`
-
-`GET /public/widget/{tenant_id}` — snippet JavaScript que embute iframe de booking no website do cliente.
-
-### F41 — Fichas Clínicas 🔄
-**Branch:** `feature/f36-f41-stocks-rooms-qr-widget-clinical`
-
-`ClinicalRecord` (alergias, notas_saude, consentimento digital). `ClinicalNote` com notas individuais por barbeiro. Endpoints CRUD para admin/barbeiro. Migração Alembic `e5f6a7b8c9d0`.
+Páginas admin: Packs, Fidelização, Campanhas, Pagamentos, Faturas, Stocks, Recursos, Fichas Clínicas, SAF-T, Segmentação de Clientes. Páginas cliente: Os Meus Packs, Fidelização. Navegação atualizada no Navbar.
 
 ---
 
