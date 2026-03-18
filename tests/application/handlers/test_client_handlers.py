@@ -10,6 +10,8 @@ from backend.application.handlers.client.create_client_handler import CreateClie
 from backend.application.handlers.client.delete_client_handler import DeleteClientHandler
 from backend.application.handlers.client.get_client_handler import GetClientHandler
 from backend.application.handlers.client.list_clients_handler import ListClientsHandler
+from backend.application.handlers.clients.get_client_segment_handler import GetClientSegmentHandler
+from backend.application.queries.get_client_segment_query import GetClientSegmentQuery
 from backend.application.queries.get_client_query import GetClientQuery
 from backend.application.queries.list_clients_query import ListClientsQuery
 from backend.core.client import Client
@@ -110,6 +112,32 @@ class ClientHandlersTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(query_builder.filter.called)
         db.delete.assert_not_called()
         db.commit.assert_not_called()
+
+    async def test_get_client_segment_handler_returns_clients_from_repository(self):
+        db = MagicMock()
+        query_builder = MagicMock()
+        expected_clients = [object()]
+
+        db.query.return_value = query_builder
+        query_builder.filter.return_value = query_builder
+        query_builder.all.return_value = expected_clients
+
+        handler = GetClientSegmentHandler(db)
+
+        result = await handler.handle(
+            GetClientSegmentQuery(
+                tenant_id=5,
+                inactive_days=30,
+                min_spend=50.0,
+                service_id=3,
+                has_birthday_this_month=True,
+            )
+        )
+
+        self.assertIs(result, expected_clients)
+        db.query.assert_called_once_with(Client)
+        self.assertGreaterEqual(query_builder.filter.call_count, 5)
+        query_builder.all.assert_called_once_with()
 
 
 if __name__ == "__main__":

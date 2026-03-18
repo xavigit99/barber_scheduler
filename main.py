@@ -39,6 +39,7 @@ from backend.api.routes.widget_routes import router as widget_router
 from backend.core.logging_config import setup_logging
 from backend.core.notifications import build_notification_service, set_notification_service
 from backend.infrastructure.database import Base, SessionLocal, engine
+from backend.infrastructure.schema_guard import validate_database_schema
 
 # ── Logging ─────────────────────────────────────────────────────────────────
 setup_logging(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -49,6 +50,7 @@ set_notification_service(build_notification_service())
 
 # ── Database ──────────────────────────────────────────────────────────────────
 Base.metadata.create_all(bind=engine)
+validate_database_schema(engine)
 
 # ── Rate limiter ─────────────────────────────────────────────────────────────
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])

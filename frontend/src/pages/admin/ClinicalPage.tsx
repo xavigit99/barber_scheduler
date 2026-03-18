@@ -146,7 +146,10 @@ export default function ClinicalPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-slate-800">Fichas Clinicas</h1>
+      <h1 className="mb-2 text-2xl font-semibold text-slate-800">Ficha do Cliente</h1>
+      <p className="mb-6 text-sm text-slate-500">
+        Registo interno para observacoes, sensibilidades, consentimento e historico relevante em servicos de barbearia, grooming e estetica complementar.
+      </p>
 
       {/* Client selector */}
       <div className="mb-6">
@@ -170,9 +173,9 @@ export default function ClinicalPage() {
           {/* Clinical record card */}
           <div className="rounded-xl bg-white p-6 shadow-sm border border-slate-200">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-slate-800">Ficha de {selectedClientName}</h2>
+              <h2 className="text-lg font-semibold text-slate-800">Registo de {selectedClientName}</h2>
               <div className="flex gap-2">
-                <Button size="sm" onClick={openEdit}>Editar Ficha</Button>
+                <Button size="sm" onClick={openEdit}>Editar Registo</Button>
                 {!record?.consentimento_assinado && (
                   <Button size="sm" variant="secondary" onClick={handleConsent}>Assinar Consentimento</Button>
                 )}
@@ -180,11 +183,11 @@ export default function ClinicalPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="font-medium text-slate-600">Alergias:</span>
+                <span className="font-medium text-slate-600">Alergias ou sensibilidades:</span>
                 <p className="text-slate-800 mt-1">{record?.alergias || 'Nenhuma registada'}</p>
               </div>
               <div>
-                <span className="font-medium text-slate-600">Notas de Saude:</span>
+                <span className="font-medium text-slate-600">Notas relevantes:</span>
                 <p className="text-slate-800 mt-1">{record?.notas_saude || 'Nenhuma'}</p>
               </div>
               <div>
@@ -233,10 +236,10 @@ export default function ClinicalPage() {
       )}
 
       {/* Edit Modal */}
-      <Modal open={editModalOpen} onClose={() => setEditModalOpen(false)} title="Editar Ficha Clinica">
+      <Modal open={editModalOpen} onClose={() => setEditModalOpen(false)} title="Editar Registo do Cliente">
         <form onSubmit={handleEdit} className="space-y-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-slate-700">Alergias</label>
+            <label className="text-sm font-medium text-slate-700">Alergias ou sensibilidades</label>
             <textarea
               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 min-h-[80px]"
               value={editForm.alergias}
@@ -244,7 +247,7 @@ export default function ClinicalPage() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-slate-700">Notas de Saude</label>
+            <label className="text-sm font-medium text-slate-700">Notas relevantes</label>
             <textarea
               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 min-h-[80px]"
               value={editForm.notas_saude}

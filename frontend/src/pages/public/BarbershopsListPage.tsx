@@ -41,7 +41,7 @@ export default function BarbershopsListPage() {
             Barber<span className="text-amber-400">Pro</span>
           </h1>
           <p className="text-slate-400 text-lg max-w-xs mx-auto">
-            O teu corte perfeito, a um clique de distância
+            Agenda servicos de barbearia, grooming e estetica complementar num so lugar
           </p>
 
           <div className="mt-6 flex items-center justify-center gap-3 text-slate-600">
@@ -66,7 +66,7 @@ export default function BarbershopsListPage() {
           )}
 
           {!loading && !error && barbershops.length === 0 && (
-            <p className="text-center text-slate-500 py-16">Nenhuma barbearia disponível.</p>
+            <p className="text-center text-slate-500 py-16">Nenhuma barbearia disponivel.</p>
           )}
 
           {!loading && !error && barbershops.map((shop) => (

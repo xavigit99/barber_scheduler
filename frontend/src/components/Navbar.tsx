@@ -25,7 +25,7 @@ const adminLinks: NavItem[] = [
   { to: '/admin/invoices', label: 'Faturas', requiresTenant: true },
   { to: '/admin/stocks', label: 'Stocks', requiresTenant: true },
   { to: '/admin/resources', label: 'Recursos', requiresTenant: true },
-  { to: '/admin/clinical', label: 'Fichas Clínicas', requiresTenant: true },
+  { to: '/admin/clinical', label: 'Ficha do Cliente', requiresTenant: true },
   { to: '/admin/saft', label: 'SAF-T', requiresTenant: true },
   { to: '/admin/clients/segment', label: 'Segmentação', requiresTenant: true },
 ];
