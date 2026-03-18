@@ -12,6 +12,7 @@ from backend.api.appointment_http import (
     build_get_appointment_query,
     build_list_barber_appointments_query,
     build_list_client_appointments_query,
+    build_list_tenant_appointments_query,
     build_reschedule_appointment_command,
     ensure_appointment_found,
 )
@@ -164,6 +165,51 @@ async def cancel_appointment(
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/", response_model=list[AppointmentResponse])
+async def list_tenant_appointments(
+    target_date: date | None = None,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles(ADMIN_ROLE, BARBER_ROLE)),
+    tenant_id: int | None = Header(None, alias=TENANT_HEADER_ALIAS),
+):
+    tid = tenant_id
+    if tid is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tenant context is required",
+        )
+
+    barber_id = None
+    role = _get_user_role(current_user)
+    user_id = _get_user_id(current_user)
+
+    if role == BARBER_ROLE:
+        barber = (
+            db.query(Barber)
+            .filter(
+                Barber.user_id == user_id,
+                Barber.tenant_id == tid,
+                Barber.deleted.is_(False),
+            )
+            .first()
+        )
+        if barber is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not enough permissions",
+            )
+        barber_id = barber.id
+
+    mediator = build_mediator(db)
+    return await mediator.send(
+        build_list_tenant_appointments_query(
+            tenant_id=tid,
+            barber_id=barber_id,
+            target_date=target_date,
+        )
+    )
 
 
 @router.get(

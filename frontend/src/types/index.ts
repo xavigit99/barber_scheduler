@@ -22,6 +22,10 @@ export interface Barbershop {
   nome: string;
   owner_user_id: string;
   tenant_id: string;
+  billing_plan?: string;
+  subscription_status?: string;
+  stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
 }
 
 export interface Barber {
@@ -58,6 +62,8 @@ export interface Appointment {
   end_at: string;
   created_at: string;
   updated_at: string;
+  payment_status?: string;
+  payment_method?: string | null;
 }
 
 export interface AvailabilityWindow {

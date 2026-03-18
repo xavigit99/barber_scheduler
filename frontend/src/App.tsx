@@ -8,6 +8,7 @@ import Spinner from './components/Spinner';
 /* Pages */
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import AdminRegisterPage from './pages/AdminRegisterPage';
 import DashboardPage from './pages/admin/DashboardPage';
 import BarbershopsPage from './pages/admin/BarbershopsPage';
 import BarbersPage from './pages/admin/BarbersPage';
@@ -69,6 +70,7 @@ export default function App() {
             <Route path="/barbershops" element={<BarbershopsListPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/admin/register" element={<AdminRegisterPage />} />
             <Route path="/book/:tenantId" element={<PublicBookPage />} />
             <Route path="/join/:tenantId" element={<ClientRegisterPage />} />
             <Route path="/signin/:tenantId" element={<ClientLoginPage />} />
