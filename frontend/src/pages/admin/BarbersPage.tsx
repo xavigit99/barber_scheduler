@@ -50,7 +50,7 @@ export default function BarbersPage() {
     e.preventDefault();
     try {
       if (editing) {
-        await api.put(`/barbers/${editing.id}`, { nome: form.nome, email: form.email, telefone: form.telefone });
+        await api.patch(`/barbers/${editing.id}`, { nome: form.nome, email: form.email, telefone: form.telefone || null });
         toast('Barbeiro atualizado', 'success');
       } else {
         await api.post('/auth/register-barber', {
