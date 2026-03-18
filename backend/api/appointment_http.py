@@ -37,6 +37,7 @@ def build_create_appointment_command(
         service_id=payload.service_id,
         start_at=payload.data_inicio,
         tenant_id=tenant_id,
+        resource_id=payload.resource_id,
     )
 
 

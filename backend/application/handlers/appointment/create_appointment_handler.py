@@ -1,3 +1,4 @@
+import logging
 import os
 import secrets
 from datetime import datetime, timedelta
@@ -19,6 +20,8 @@ from backend.core.exceptions import ConflictError, NotFoundError
 from backend.core.scheduling import ensure_valid_timezone, normalize_local_datetime
 from backend.core.service import Service
 from repositories.base_repository import BaseRepository
+
+logger = logging.getLogger(__name__)
 
 
 class CreateAppointmentHandler(RequestHandler[CreateAppointmentCommand, object]):
@@ -83,6 +86,34 @@ class CreateAppointmentHandler(RequestHandler[CreateAppointmentCommand, object])
         if overlapping:
             raise ConflictError("Appointment overlaps an existing booking")
 
+        # F38 — Resource double-booking check
+        if command.resource_id is not None:
+            from backend.core.resource import Resource
+
+            resource = (
+                self.db.query(Resource)
+                .filter(
+                    Resource.id == command.resource_id,
+                    Resource.deleted.is_(False),
+                )
+                .first()
+            )
+            if resource is None:
+                raise NotFoundError("Resource not found")
+
+            resource_overlap = (
+                self.db.query(Appointment)
+                .filter(
+                    Appointment.resource_id == command.resource_id,
+                    Appointment.deleted.is_(False),
+                    Appointment.start_at < end_at,
+                    Appointment.end_at > start_at,
+                )
+                .first()
+            )
+            if resource_overlap:
+                raise ConflictError("Resource is already booked at this time")
+
         now = datetime.now()
         token = secrets.token_urlsafe(32)
         appointment = Appointment(
@@ -96,6 +127,7 @@ class CreateAppointmentHandler(RequestHandler[CreateAppointmentCommand, object])
             updated_at=now,
             status="pending",
             confirmation_token=token,
+            resource_id=command.resource_id,  # F38
         )
         self.db.add(appointment)
         self.db.commit()
@@ -187,6 +219,33 @@ class CreateAppointmentHandler(RequestHandler[CreateAppointmentCommand, object])
             )
             self.db.add(tx)
             self.db.commit()
+        except Exception:  # noqa: BLE001
+            pass
+
+        # F37 — Deduct stock for service products (best-effort)
+        try:
+            from backend.core.product import Product, ServiceProduct
+
+            links = (
+                self.db.query(ServiceProduct)
+                .filter(
+                    ServiceProduct.service_id == command.service_id,
+                    ServiceProduct.deleted.is_(False),
+                )
+                .all()
+            )
+            for link in links:
+                product = self.db.query(Product).filter(Product.id == link.product_id).first()
+                if product is not None:
+                    product.stock_atual = max(0, product.stock_atual - link.quantidade)
+            if links:
+                self.db.commit()
+                logger.info(
+                    "Stock deducted for appointment=%d service=%d products=%d",
+                    appointment.id,
+                    command.service_id,
+                    len(links),
+                )
         except Exception:  # noqa: BLE001
             pass
 

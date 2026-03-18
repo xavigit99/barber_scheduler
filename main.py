@@ -18,6 +18,7 @@ from backend.api.routes.barber_routes import router as barber_router
 from backend.api.routes.barbershop_routes import router as barbershop_router
 from backend.api.routes.campaign_routes import router as campaign_router
 from backend.api.routes.client_routes import router as client_router
+from backend.api.routes.clinical_routes import router as clinical_router
 from backend.api.routes.feedback_routes import router as feedback_router
 from backend.api.routes.health_routes import router as health_router
 from backend.api.routes.invoice_routes import router as invoice_router
@@ -25,11 +26,16 @@ from backend.api.routes.loyalty_routes import router as loyalty_router
 from backend.api.routes.membership_routes import router as membership_router
 from backend.api.routes.pack_routes import router as pack_router
 from backend.api.routes.payment_routes import router as payment_router
+from backend.api.routes.product_routes import router as product_router
 from backend.api.routes.public_routes import router as public_router
+from backend.api.routes.qr_routes import router as qr_router
 from backend.api.routes.report_routes import router as report_router
+from backend.api.routes.resource_routes import router as resource_router
+from backend.api.routes.saft_routes import router as saft_router
 from backend.api.routes.service_routes import router as service_router
 from backend.api.routes.stats_routes import router as stats_router
 from backend.api.routes.webhook_routes import router as webhook_router
+from backend.api.routes.widget_routes import router as widget_router
 from backend.core.logging_config import setup_logging
 from backend.core.notifications import build_notification_service, set_notification_service
 from backend.infrastructure.database import Base, SessionLocal, engine
@@ -134,5 +140,11 @@ app.include_router(loyalty_router)
 app.include_router(campaign_router)
 app.include_router(payment_router)
 app.include_router(invoice_router)
+app.include_router(saft_router)
+app.include_router(product_router)
+app.include_router(resource_router)
+app.include_router(qr_router)
+app.include_router(widget_router)
+app.include_router(clinical_router)
 
 logger.info("Barber Scheduler API started", extra={"origins": _origins})
