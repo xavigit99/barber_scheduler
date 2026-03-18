@@ -45,7 +45,8 @@ async def get_current_user(
 
 def require_roles(*roles: str):
     async def dependency(current_user=Depends(get_current_user)):
-        if current_user.role not in roles:
+        user_roles = set(current_user.role.split(","))
+        if not any(r in user_roles for r in roles):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not enough permissions",

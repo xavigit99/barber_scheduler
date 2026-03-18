@@ -1,5 +1,4 @@
 from datetime import date, datetime, time
-from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -191,7 +190,7 @@ class ServiceResponse(ServiceBase):
 class UserBase(BaseModel):
     username: str
     email: str
-    role: Literal[ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE]
+    role: str  # comma-separated roles, e.g. "barber,client"
 
 
 class UserResponse(UserBase):

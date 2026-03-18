@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import api from '../../lib/api';
+import api, { getApiError } from '../../lib/api';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Spinner from '../../components/Spinner';
@@ -54,8 +54,8 @@ function ReviewModal({ appointmentId, barberName, onClose, onDone }: ReviewModal
       await api.post('/feedback', { appointment_id: Number(appointmentId), rating, comentario: comentario || null });
       toast('Avaliação enviada!', 'success');
       onDone(appointmentId);
-    } catch {
-      toast('Erro ao enviar avaliação', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao enviar avaliação'), 'error');
     } finally {
       setSubmitting(false);
     }
@@ -117,7 +117,7 @@ function RescheduleModal({ appointment, onClose, onDone }: RescheduleModalProps)
         const data = res.data?.slots ?? res.data;
         setSlots(Array.isArray(data) ? data : []);
       })
-      .catch(() => { toast('Erro ao carregar horários', 'error'); setSlots([]); })
+      .catch((err) => { toast(getApiError(err, 'Erro ao carregar horários'), 'error'); setSlots([]); })
       .finally(() => setLoadingSlots(false));
   }, [targetDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -128,8 +128,8 @@ function RescheduleModal({ appointment, onClose, onDone }: RescheduleModalProps)
       await api.patch(`/appointments/${appointment.id}`, { nova_data_inicio: selectedSlot.inicio });
       toast('Agendamento remarcado!', 'success');
       onDone();
-    } catch {
-      toast('Erro ao remarcar agendamento', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao remarcar agendamento'), 'error');
     } finally {
       setSubmitting(false);
     }
@@ -239,8 +239,8 @@ export default function MyAppointmentsPage() {
         data.sort((a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime());
       }
       setAppointments(data);
-    } catch {
-      toast('Erro ao carregar agendamentos', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao carregar agendamentos'), 'error');
       setAppointments([]);
     } finally {
       setLoading(false);
@@ -255,8 +255,8 @@ export default function MyAppointmentsPage() {
       await api.delete(`/appointments/${id}`);
       toast('Agendamento cancelado', 'success');
       setAppointments((prev) => prev.filter((a) => String(a.id) !== String(id)));
-    } catch {
-      toast('Erro ao cancelar agendamento', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao cancelar agendamento'), 'error');
     }
   }
 

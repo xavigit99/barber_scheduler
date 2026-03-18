@@ -219,7 +219,9 @@ class AuthHandlersTestCase(unittest.IsolatedAsyncioTestCase):
         query_builder = MagicMock()
         db.query.return_value = query_builder
         query_builder.filter.return_value = query_builder
-        query_builder.first.return_value = object()
+        existing_user = MagicMock()
+        existing_user.role = "barber"
+        query_builder.first.return_value = existing_user
 
         handler = RegisterBarberHandler(db)
         with self.assertRaises(ConflictError):

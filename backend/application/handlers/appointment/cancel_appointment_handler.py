@@ -47,6 +47,9 @@ class CancelAppointmentHandler(RequestHandler[CancelAppointmentCommand, bool]):
         # Best-effort cancellation notification
         from backend.core.notifications import AppointmentNotification, get_notification_service
 
+        client = None
+        barber = None
+        service = None
         try:
             client = self.db.query(Client).filter(Client.id == appointment.client_id).first()
             barber = self.db.query(Barber).filter(Barber.id == appointment.barber_id).first()
@@ -61,6 +64,22 @@ class CancelAppointmentHandler(RequestHandler[CancelAppointmentCommand, bool]):
                     appointment_id=appointment.id,
                 )
             )
+        except Exception:  # noqa: BLE001
+            pass
+
+        # Notify barber via WhatsApp (best-effort)
+        try:
+            from backend.core.whatsapp import build_whatsapp_service
+
+            if barber and barber.telefone:
+                build_whatsapp_service().notify_barber_cancellation(
+                    barber_phone=barber.telefone,
+                    barber_name=barber.nome,
+                    client_name=client.nome if client else "",
+                    service_name=service.nome if service else "",
+                    start_at=appointment.start_at,
+                    appointment_id=appointment.id,
+                )
         except Exception:  # noqa: BLE001
             pass
 

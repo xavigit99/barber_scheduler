@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../lib/api';
+import api, { getApiError } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import Table from '../../components/Table';
 import Button from '../../components/Button';
@@ -23,8 +23,8 @@ export default function ClientsPage() {
     try {
       const res = await api.get('/clients/');
       setClients(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      toast('Erro ao carregar clientes', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao carregar clientes'), 'error');
     } finally {
       setLoading(false);
     }
@@ -59,8 +59,8 @@ export default function ClientsPage() {
       }
       setModalOpen(false);
       load();
-    } catch {
-      toast('Erro ao guardar cliente', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao guardar cliente'), 'error');
     }
   }
 
@@ -70,8 +70,8 @@ export default function ClientsPage() {
       await api.delete(`/clients/${id}`);
       toast('Cliente eliminado', 'success');
       load();
-    } catch {
-      toast('Erro ao eliminar cliente', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao eliminar cliente'), 'error');
     }
   }
 

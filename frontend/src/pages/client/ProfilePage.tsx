@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import api from '../../lib/api';
+import api, { getApiError } from '../../lib/api';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Spinner from '../../components/Spinner';
@@ -29,7 +29,7 @@ export default function ProfilePage() {
         setClient(c);
         setForm({ nome: c.nome, email: c.email, telefone: c.telefone ?? '' });
       })
-      .catch(() => toast('Erro ao carregar perfil', 'error'))
+      .catch((err) => toast(getApiError(err, 'Erro ao carregar perfil'), 'error'))
       .finally(() => setLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -45,8 +45,8 @@ export default function ProfilePage() {
       });
       setClient(res.data);
       toast('Perfil atualizado!', 'success');
-    } catch {
-      toast('Erro ao atualizar perfil', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao atualizar perfil'), 'error');
     } finally {
       setSaving(false);
     }
@@ -66,8 +66,8 @@ export default function ProfilePage() {
       });
       toast('Password alterada!', 'success');
       setPwForm({ current_password: '', new_password: '', confirm: '' });
-    } catch {
-      toast('Erro ao alterar password', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao alterar password'), 'error');
     } finally {
       setSavingPw(false);
     }

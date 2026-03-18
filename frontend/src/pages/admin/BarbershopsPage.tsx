@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import api from '../../lib/api';
+import api, { getApiError } from '../../lib/api';
 import Table from '../../components/Table';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal';
@@ -17,7 +17,7 @@ export default function BarbershopsPage() {
   const [editing, setEditing] = useState<Barbershop | null>(null);
   const [nome, setNome] = useState('');
   const { toast } = useToast();
-  const { selectTenant } = useAuth();
+  const { selectTenant, tenantId } = useAuth();
 
   /* Memberships modal */
   const [membershipsShop, setMembershipsShop] = useState<Barbershop | null>(null);
@@ -47,8 +47,8 @@ export default function BarbershopsPage() {
       toast('Membro adicionado', 'success');
       const res = await api.get(`/barbershops/${membershipsShop.id}/memberships`);
       setMemberships(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      toast('Erro ao adicionar membro', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao adicionar membro'), 'error');
     }
   }
 
@@ -59,17 +59,17 @@ export default function BarbershopsPage() {
       toast('Membro removido', 'success');
       const res = await api.get(`/barbershops/${membershipsShop.id}/memberships`);
       setMemberships(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      toast('Erro ao remover membro', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao remover membro'), 'error');
     }
   }
 
   async function load() {
     try {
-      const res = await api.get('/barbershops/');
+      const res = await api.get('/barbershops/', { skipTenantHeader: true });
       setShops(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      toast('Erro ao carregar barbearias', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao carregar barbearias'), 'error');
     } finally {
       setLoading(false);
     }
@@ -103,8 +103,8 @@ export default function BarbershopsPage() {
       }
       setModalOpen(false);
       load();
-    } catch {
-      toast('Erro ao guardar barbearia', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao guardar barbearia'), 'error');
     }
   }
 
@@ -114,14 +114,14 @@ export default function BarbershopsPage() {
       await api.delete(`/barbershops/${id}`);
       toast('Barbearia eliminada', 'success');
       load();
-    } catch {
-      toast('Erro ao eliminar barbearia', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao eliminar barbearia'), 'error');
     }
   }
 
   function handleSelectTenant(shop: Barbershop) {
-    selectTenant(shop.tenant_id);
-    toast(`Tenant selecionado: ${shop.nome}`, 'success');
+    selectTenant(shop.tenant_id, shop.nome);
+    toast(`Barbearia seleccionada: ${shop.nome}`, 'success');
   }
 
   if (loading) return <Spinner />;
@@ -146,8 +146,12 @@ export default function BarbershopsPage() {
             header: 'Acoes',
             render: (s) => (
               <div className="flex gap-2">
-                <Button size="sm" variant="secondary" onClick={() => handleSelectTenant(s)}>
-                  Selecionar
+                <Button
+                  size="sm"
+                  variant={s.tenant_id === tenantId ? 'primary' : 'secondary'}
+                  onClick={() => handleSelectTenant(s)}
+                >
+                  {s.tenant_id === tenantId ? 'Seleccionada ✓' : 'Seleccionar'}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => openMemberships(s)}>
                   Membros

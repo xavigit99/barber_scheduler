@@ -34,13 +34,18 @@ const clientLinks: NavItem[] = [
 ];
 
 export default function Navbar() {
-  const { user, logout, tenantId } = useAuth();
+  const { user, logout, tenantId, tenantName } = useAuth();
   const location = useLocation();
 
   if (!user) return null;
 
-  const allLinks =
-    user.role === 'admin' ? adminLinks : user.role === 'barber' ? barberLinks : clientLinks;
+  const userRoles = user.role.split(',');
+
+  const allLinks = [
+    ...(userRoles.includes('admin') ? adminLinks : []),
+    ...(userRoles.includes('barber') ? barberLinks : []),
+    ...(userRoles.includes('client') ? clientLinks : []),
+  ];
 
   const links = allLinks.filter((link) => !link.requiresTenant || tenantId);
 
@@ -58,10 +63,10 @@ export default function Navbar() {
 
       {/* tenant badge */}
       {tenantId ? (
-        <div className="px-5 py-2 text-xs text-slate-500 truncate border-b border-slate-800">
-          Tenant: {String(tenantId).slice(0, 8)}...
+        <div className="px-5 py-2 text-xs text-emerald-400 truncate border-b border-slate-800">
+          {tenantName ?? `Tenant ${String(tenantId).slice(0, 6)}`}
         </div>
-      ) : user.role === 'admin' ? (
+      ) : userRoles.includes('admin') ? (
         <div className="px-5 py-2 text-xs text-amber-500 border-b border-slate-800">
           Seleciona uma barbearia
         </div>

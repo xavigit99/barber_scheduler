@@ -18,18 +18,21 @@ import {
   getToken,
   getTenantId,
   setTenantId as storeTenantId,
+  getTenantName,
+  setTenantName as storeTenantName,
 } from '../lib/auth';
 import type { User } from '../types';
 
 interface AuthState {
   user: User | null;
   tenantId: string | null;
+  tenantName: string | null;
   clientId: number | null;
   barberId: number | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<User>;
   logout: () => void;
-  selectTenant: (id: string) => void;
+  selectTenant: (id: string, name?: string) => void;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -55,6 +58,7 @@ async function resolveBarberProfile(): Promise<{ barberId: number; tenantId: str
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(getUser);
   const [tenantId, setTenantId] = useState<string | null>(getTenantId);
+  const [tenantName, setTenantName] = useState<string | null>(getTenantName);
   const [clientId, setClientId] = useState<number | null>(null);
   const [barberId, setBarberId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,7 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then(async (res) => {
         const u: User = res.data;
         setUser(u);
-        if (u.role === 'client') {
+        const roles = u.role.split(',');
+        if (roles.includes('client')) {
           const profile = await resolveClientProfile();
           if (profile) {
             setClientId(profile.clientId);
@@ -80,7 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setTenantId(profile.tenantId);
             }
           }
-        } else if (u.role === 'barber') {
+        }
+        if (roles.includes('barber')) {
           const profile = await resolveBarberProfile();
           if (profile) {
             setBarberId(profile.barberId);
@@ -104,14 +110,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveAuth(access_token, userData);
     setUser(userData);
 
-    if (userData.role === 'client') {
+    const roles = userData.role.split(',');
+    if (roles.includes('client')) {
       const profile = await resolveClientProfile();
       if (profile) {
         setClientId(profile.clientId);
         storeTenantId(profile.tenantId);
         setTenantId(profile.tenantId);
       }
-    } else if (userData.role === 'barber') {
+    }
+    if (roles.includes('barber')) {
       const profile = await resolveBarberProfile();
       if (profile) {
         setBarberId(profile.barberId);
@@ -127,17 +135,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearAuth();
     setUser(null);
     setTenantId(null);
+    setTenantName(null);
     setClientId(null);
     setBarberId(null);
   }, []);
 
-  const selectTenant = useCallback((id: string) => {
+  const selectTenant = useCallback((id: string, name?: string) => {
     storeTenantId(id);
     setTenantId(id);
+    if (name !== undefined) {
+      storeTenantName(name);
+      setTenantName(name);
+    }
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, tenantId, clientId, barberId, loading, login, logout, selectTenant }}>
+    <AuthContext.Provider value={{ user, tenantId, tenantName, clientId, barberId, loading, login, logout, selectTenant }}>
       {children}
     </AuthContext.Provider>
   );

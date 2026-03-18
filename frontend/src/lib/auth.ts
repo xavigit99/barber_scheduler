@@ -6,6 +6,7 @@ import type { User } from '../types';
 
 const TOKEN_KEY = 'barber_token';
 const TENANT_KEY = 'barber_tenant_id';
+const TENANT_NAME_KEY = 'barber_tenant_name';
 const USER_KEY = 'barber_user';
 
 export function saveAuth(token: string, user: User, tenantId?: string): void {
@@ -38,8 +39,17 @@ export function setTenantId(id: string): void {
   localStorage.setItem(TENANT_KEY, id);
 }
 
+export function getTenantName(): string | null {
+  return localStorage.getItem(TENANT_NAME_KEY);
+}
+
+export function setTenantName(name: string): void {
+  localStorage.setItem(TENANT_NAME_KEY, name);
+}
+
 export function clearAuth(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
   localStorage.removeItem(TENANT_KEY);
+  localStorage.removeItem(TENANT_NAME_KEY);
 }

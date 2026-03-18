@@ -15,22 +15,37 @@ class RegisterBarberHandler(RequestHandler[RegisterBarberCommand, object]):
         self.db = db
 
     async def handle(self, command: RegisterBarberCommand):
-        existing = (
+        existing_user = (
             self.db.query(User)
             .filter(or_(User.username == command.username, User.email == command.email))
             .first()
         )
-        if existing is not None:
-            raise ConflictError("User with this username or email already exists")
 
-        user = User(
-            username=command.username,
-            email=command.email,
-            password_hash=hash_password(command.password),
-            role="barber",
-        )
-        self.db.add(user)
-        self.db.flush()
+        if existing_user is not None:
+            user_roles = set(existing_user.role.split(","))
+            if "barber" in user_roles:
+                # Allow re-registration only if the existing barber profile is deleted
+                active_barber = (
+                    self.db.query(Barber)
+                    .filter(Barber.user_id == existing_user.id, Barber.deleted.is_(False))
+                    .first()
+                )
+                if active_barber is not None:
+                    raise ConflictError("User with this username or email already exists")
+            else:
+                user_roles.add("barber")
+                existing_user.role = ",".join(sorted(user_roles))
+            user = existing_user
+            self.db.flush()
+        else:
+            user = User(
+                username=command.username,
+                email=command.email,
+                password_hash=hash_password(command.password),
+                role="barber",
+            )
+            self.db.add(user)
+            self.db.flush()
 
         barber = Barber(
             nome=command.nome,

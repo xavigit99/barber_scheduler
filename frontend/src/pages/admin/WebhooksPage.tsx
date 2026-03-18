@@ -1,6 +1,6 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, useCallback, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../lib/api';
+import api, { getApiError } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import Table from '../../components/Table';
 import Button from '../../components/Button';
@@ -23,33 +23,69 @@ const AVAILABLE_EVENTS = [
   'appointment.rescheduled',
 ];
 
+const EVENT_LABELS: Record<string, string> = {
+  'appointment.created': 'Criado',
+  'appointment.cancelled': 'Cancelado',
+  'appointment.rescheduled': 'Remarcado',
+};
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 export default function WebhooksPage() {
   const { tenantId } = useAuth();
   const { toast } = useToast();
 
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [loading, setLoading] = useState(true);
+  const [testingId, setTestingId] = useState<number | null>(null);
 
   /* create modal */
   const [modalOpen, setModalOpen] = useState(false);
   const [url, setUrl] = useState('');
   const [secret, setSecret] = useState('');
+  const [secretCopied, setSecretCopied] = useState(false);
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
+
+  const fetchWebhooks = useCallback(async () => {
+    try {
+      const res = await api.get('/admin/webhooks');
+      setWebhooks(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao carregar webhooks'), 'error');
+    }
+  }, [toast]);
 
   useEffect(() => {
     if (!tenantId) return;
     setLoading(true);
-    api
-      .get('/admin/webhooks')
-      .then((res) => setWebhooks(Array.isArray(res.data) ? res.data : []))
-      .catch(() => toast('Erro ao carregar webhooks', 'error'))
-      .finally(() => setLoading(false));
-  }, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+    fetchWebhooks().finally(() => setLoading(false));
+  }, [tenantId, fetchWebhooks]);
 
   function toggleEvent(event: string) {
     setSelectedEvents((prev) =>
       prev.includes(event) ? prev.filter((e) => e !== event) : [...prev, event],
     );
+  }
+
+  function generateSecret() {
+    const array = new Uint8Array(24);
+    crypto.getRandomValues(array);
+    const generated = Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('');
+    setSecret(generated);
+    setSecretCopied(false);
+  }
+
+  async function copySecret() {
+    try {
+      await navigator.clipboard.writeText(secret);
+      setSecretCopied(true);
+      setTimeout(() => setSecretCopied(false), 2000);
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao copiar'), 'error');
+    }
   }
 
   async function handleCreate(e: FormEvent) {
@@ -60,15 +96,11 @@ export default function WebhooksPage() {
       setModalOpen(false);
       setUrl('');
       setSecret('');
+      setSecretCopied(false);
       setSelectedEvents([]);
-      const res = await api.get('/admin/webhooks');
-      setWebhooks(Array.isArray(res.data) ? res.data : []);
-    } catch (err: unknown) {
-      const detail =
-        typeof err === 'object' && err !== null && 'response' in err
-          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
-          : null;
-      toast(detail ?? 'Erro ao criar webhook', 'error');
+      await fetchWebhooks();
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao criar webhook'), 'error');
     }
   }
 
@@ -78,8 +110,20 @@ export default function WebhooksPage() {
       await api.delete(`/admin/webhooks/${id}`);
       toast('Webhook removido', 'success');
       setWebhooks((prev) => prev.filter((w) => w.id !== id));
-    } catch {
-      toast('Erro ao remover webhook', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao remover webhook'), 'error');
+    }
+  }
+
+  async function handleTest(id: number) {
+    setTestingId(id);
+    try {
+      await api.post(`/admin/webhooks/${id}/test`);
+      toast('Ping enviado com sucesso', 'success');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao testar webhook'), 'error');
+    } finally {
+      setTestingId(null);
     }
   }
 
@@ -109,14 +153,41 @@ export default function WebhooksPage() {
       <Table
         columns={[
           { key: 'url', header: 'URL', render: (w) => w.url },
-          { key: 'events', header: 'Eventos', render: (w) => w.events.join(', ') },
+          {
+            key: 'events',
+            header: 'Eventos',
+            render: (w) =>
+              w.events.map((evt) => EVENT_LABELS[evt] ?? evt).join(', '),
+          },
+          {
+            key: 'secret',
+            header: 'Secret',
+            render: () => (
+              <span className="text-xs text-slate-500 italic">Secret configurado</span>
+            ),
+          },
+          {
+            key: 'created_at',
+            header: 'Criado em',
+            render: (w) => formatDate(w.created_at),
+          },
           {
             key: 'actions',
-            header: 'Acoes',
+            header: 'Ações',
             render: (w) => (
-              <Button size="sm" variant="danger" onClick={() => handleDelete(w.id)}>
-                Remover
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleTest(w.id)}
+                  disabled={testingId === w.id}
+                >
+                  {testingId === w.id ? 'Enviando...' : 'Testar'}
+                </Button>
+                <Button size="sm" variant="danger" onClick={() => handleDelete(w.id)}>
+                  Remover
+                </Button>
+              </div>
             ),
           },
         ]}
@@ -136,13 +207,34 @@ export default function WebhooksPage() {
             required
             placeholder="https://example.com/webhook"
           />
-          <Input
-            label="Secret"
-            type="password"
-            value={secret}
-            onChange={(e) => setSecret(e.target.value)}
-            required
-          />
+
+          {/* Secret with generate + copy */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Secret</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                value={secret}
+                placeholder="Clique em Gerar para criar um secret"
+                className="flex-1 rounded border border-slate-300 bg-slate-50 px-3 py-2 text-sm font-mono text-slate-700 focus:outline-none"
+              />
+              <Button type="button" size="sm" variant="secondary" onClick={generateSecret}>
+                Gerar
+              </Button>
+              {secret && (
+                <Button type="button" size="sm" variant="secondary" onClick={copySecret}>
+                  {secretCopied ? 'Copiado!' : 'Copiar'}
+                </Button>
+              )}
+            </div>
+            {secret && (
+              <p className="mt-1 text-xs text-amber-600">
+                Guarde este secret — ele não será exibido novamente.
+              </p>
+            )}
+          </div>
+
           <fieldset>
             <legend className="mb-2 text-sm font-medium text-slate-700">Eventos</legend>
             {AVAILABLE_EVENTS.map((evt) => (
@@ -153,7 +245,7 @@ export default function WebhooksPage() {
                   onChange={() => toggleEvent(evt)}
                   className="rounded border-slate-300"
                 />
-                {evt}
+                {EVENT_LABELS[evt] ?? evt} <span className="text-xs text-slate-400">({evt})</span>
               </label>
             ))}
           </fieldset>
@@ -161,7 +253,7 @@ export default function WebhooksPage() {
             <Button variant="secondary" onClick={() => setModalOpen(false)} type="button">
               Cancelar
             </Button>
-            <Button type="submit">Criar</Button>
+            <Button type="submit" disabled={!secret}>Criar</Button>
           </div>
         </form>
       </Modal>

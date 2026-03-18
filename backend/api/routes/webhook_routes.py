@@ -1,4 +1,10 @@
-from fastapi import APIRouter, Depends, Header, Response, status
+import hashlib
+import hmac
+import json
+import urllib.request
+from datetime import UTC, datetime
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from backend.api.auth_dependencies import require_roles
@@ -11,6 +17,7 @@ from backend.api.webhook_http import (
 )
 from backend.core.exceptions import ValidationError
 from backend.core.roles import ADMIN_ROLE
+from backend.core.webhook import Webhook
 from backend.infrastructure.database import get_db
 from backend.infrastructure.schemas import WebhookCreate, WebhookResponse
 from meditor import build_mediator
@@ -55,7 +62,43 @@ async def delete_webhook(
     mediator = build_mediator(db)
     deleted = await mediator.send(build_delete_webhook_command(webhook_id, tid))
     if not deleted:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Webhook not found")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/admin/webhooks/{webhook_id}/test", status_code=status.HTTP_200_OK)
+async def test_webhook(
+    webhook_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles(ADMIN_ROLE)),
+    tenant_id: int | None = Header(None, alias=TENANT_HEADER_ALIAS),
+):
+    tid = require_tenant_id(tenant_id)
+    webhook = db.query(Webhook).filter(
+        Webhook.id == webhook_id,
+        Webhook.tenant_id == tid,
+        Webhook.deleted.is_(False),
+    ).first()
+    if not webhook:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Webhook not found")
+
+    payload = {
+        "event": "ping",
+        "timestamp": datetime.now(UTC).isoformat(),
+        "webhook_id": webhook_id,
+    }
+    body = json.dumps(payload).encode()
+    sig = hmac.new(webhook.secret.encode(), body, hashlib.sha256).hexdigest()
+    try:
+        req = urllib.request.Request(
+            webhook.url,
+            data=body,
+            headers={"Content-Type": "application/json", "X-Barber-Signature": f"sha256={sig}"},
+        )
+        urllib.request.urlopen(req, timeout=10)  # noqa: S310
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Webhook delivery failed: {exc}",
+        ) from exc
+    return {"ok": True}

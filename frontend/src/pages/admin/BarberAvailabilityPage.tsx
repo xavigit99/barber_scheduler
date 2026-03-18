@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api from '../../lib/api';
+import api, { getApiError } from '../../lib/api';
 import Table from '../../components/Table';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal';
@@ -49,8 +49,8 @@ export default function BarberAvailabilityPage() {
       ]);
       setWindows(Array.isArray(wRes.data) ? wRes.data : []);
       setBlocks(Array.isArray(bRes.data) ? bRes.data : []);
-    } catch {
-      toast('Erro ao carregar disponibilidade', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao carregar disponibilidade'), 'error');
     } finally {
       setLoading(false);
     }
@@ -72,8 +72,8 @@ export default function BarberAvailabilityPage() {
       toast('Janela adicionada', 'success');
       setWinModalOpen(false);
       loadAll();
-    } catch {
-      toast('Erro ao adicionar janela', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao adicionar janela'), 'error');
     }
   }
 
@@ -82,8 +82,8 @@ export default function BarberAvailabilityPage() {
       await api.delete(`/barbers/${barberId}/availability/windows/${windowId}`);
       toast('Janela removida', 'success');
       loadAll();
-    } catch {
-      toast('Erro ao remover janela', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao remover janela'), 'error');
     }
   }
 
@@ -100,8 +100,8 @@ export default function BarberAvailabilityPage() {
       toast('Bloqueio adicionado', 'success');
       setBlockModalOpen(false);
       loadAll();
-    } catch {
-      toast('Erro ao adicionar bloqueio', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao adicionar bloqueio'), 'error');
     }
   }
 
@@ -110,8 +110,8 @@ export default function BarberAvailabilityPage() {
       await api.delete(`/barbers/${barberId}/availability/blocks/${blockId}`);
       toast('Bloqueio removido', 'success');
       loadAll();
-    } catch {
-      toast('Erro ao remover bloqueio', 'error');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao remover bloqueio'), 'error');
     }
   }
 

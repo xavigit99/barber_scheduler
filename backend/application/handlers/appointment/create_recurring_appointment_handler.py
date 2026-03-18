@@ -106,4 +106,23 @@ class CreateRecurringAppointmentHandler(
             except Exception:  # noqa: BLE001
                 pass
 
+            # Notify barber via WhatsApp for each created appointment (best-effort)
+            try:
+                from backend.core.whatsapp import build_whatsapp_service
+
+                if barber.telefone:
+                    whatsapp = build_whatsapp_service()
+                    for appt in created:
+                        whatsapp.notify_barber_new_appointment(
+                            barber_phone=barber.telefone,
+                            barber_name=barber.nome,
+                            client_name=client.nome,
+                            service_name=service.nome,
+                            start_at=appt.start_at,
+                            appointment_id=appt.id,
+                        )
+            except Exception:  # noqa: BLE001
+                pass
+
+
         return {"created": created, "skipped_count": skipped_count}
