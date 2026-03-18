@@ -21,8 +21,8 @@
 | F23–F24 | Webhooks + Marcações Recorrentes | ✅ Completo | PR #30 |
 | F25–F27 | Lembretes + Confirmação + Grupo | ✅ Completo | PR #32 |
 | F28–F31 | Packs + Fidelização + Aniversários | ✅ Completo | PR #33 |
-| F32–F35 | Segmentação + Campanhas + Pagamentos + Faturação | 🔄 Em curso | `feature/f32-f35-segmentation-campaigns-payments-invoicing` |
-| F36–F41 | Stocks + Salas + QR + Widget + Clínicas | ⬜ Futuro | — |
+| F32–F35 | Segmentação + Campanhas + Pagamentos + Faturação | ✅ Completo | PR #34 |
+| F36–F41 | SAF-T + Stocks + Salas + QR + Widget + Clínicas | 🔄 Em curso | `feature/f36-f41-stocks-rooms-qr-widget-clinical` |
 
 ---
 
@@ -122,42 +122,45 @@
 - **F30 Cartão de fidelização:** `LoyaltyAccount` + `LoyaltyTransaction`. 1 ponto por minuto de serviço na criação de agendamento. `/loyalty/me` + `/loyalty/redeem`
 - **F31 Aniversários:** `data_nascimento` no cliente. Cron diário 09:00 envia email + WhatsApp. `birthday_msg_year` previne duplicados
 
+### F32–F35 — Segmentação + Campanhas + Pagamentos + Faturação ✅ (PR #34)
+- **F32 Segmentação de clientes:** `GET /clients/segment` com filtros: `inactive_days`, `min_spend`, `service_id`, `has_birthday_this_month`
+- **F33 Campanhas de Email:** modelo `Campaign` (draft/sent) + `POST /campaigns/{id}/send` envia em massa para segmento
+- **F34 Pagamentos online:** `payment_status` em `Appointment`; Stripe Checkout + webhook; graceful degradation sem `STRIPE_SECRET_KEY`
+- **F35 Faturação certificada:** modelo `Invoice`; InvoiceXpress API ou draft local; migração `d4e5f6a7b8c9`
+
 ---
 
 ## Em Curso
 
-### F32 — Segmentação de Clientes 🔄
-**Branch:** `feature/f32-f35-segmentation-campaigns-payments-invoicing`
+### F36 — SAF-T Export 🔄
+**Branch:** `feature/f36-f41-stocks-rooms-qr-widget-clinical`
 
-`GET /clients/segment` (admin). Filtros: `inactive_days`, `min_spend`, `service_id`, `has_birthday_this_month`. Retorna lista de clientes. Base para campanhas segmentadas.
+Exportação SAF-T-PT stub (JSON estruturado). `GET /admin/saft?year=2026` — agrega dados de agendamentos por serviço, calcula receita total e por serviço. Admin only.
 
-### F33 — Campanhas de Email 🔄
-**Branch:** `feature/f32-f35-segmentation-campaigns-payments-invoicing`
+### F37 — Gestão de Stocks 🔄
+**Branch:** `feature/f36-f41-stocks-rooms-qr-widget-clinical`
 
-Modelo `Campaign` (nome, subject, body_template, segment_filters JSON, status draft/sent). `POST /campaigns/{id}/send` aplica filtros de segmentação e envia email a cada cliente correspondente. `NotificationService.send_campaign()` adicionado.
+`Product` (nome, stock_atual, stock_minimo, preco_unitario). `ServiceProduct` liga produto a serviço com quantidade consumida. Dedução automática de stock ao criar agendamento. Endpoints CRUD + ajuste de stock + filtro low_stock.
 
-### F34 — Pagamentos Online (Stripe) 🔄
-**Branch:** `feature/f32-f35-segmentation-campaigns-payments-invoicing`
+### F38 — Gestão de Salas/Recursos 🔄
+**Branch:** `feature/f36-f41-stocks-rooms-qr-widget-clinical`
 
-`payment_status` em `Appointment` (not_required/pending/paid/refunded). `POST /payments/checkout` cria Stripe Checkout Session. `POST /payments/webhook` valida assinatura e marca `paid`. Graceful degradation se `STRIPE_SECRET_KEY` não estiver definido (HTTP 503).
+`Resource` (nome, tipo: sala/cadeira/equipamento). `resource_id` opcional no agendamento. Validação de dupla ocupação (overlap check). Endpoints CRUD admin.
 
-### F35 — Faturação Certificada (InvoiceXpress) 🔄
-**Branch:** `feature/f32-f35-segmentation-campaigns-payments-invoicing`
+### F39 — QR Code de Marcação 🔄
+**Branch:** `feature/f36-f41-stocks-rooms-qr-widget-clinical`
 
-Modelo `Invoice` (appointment_id, invoice_number, invoice_url, status draft/sent). `POST /invoices` emite via InvoiceXpress API se env vars configuradas, senão cria draft local. `GET /invoices` e `GET /invoices/{id}`.
+`GET /public/qr/{tenant_id}` — gera QR code PNG que aponta para o booking público. Usa `qrcode[pil]`.
 
----
+### F40 — Widget Embed 🔄
+**Branch:** `feature/f36-f41-stocks-rooms-qr-widget-clinical`
 
-## Futuro
+`GET /public/widget/{tenant_id}` — snippet JavaScript que embute iframe de booking no website do cliente.
 
-| # | Funcionalidade | Descrição |
-|---|----------------|-----------|
-| F36 | SAF-T | Exportação SAF-T-PT conforme AT |
-| F37 | Gestão de Stocks | Produtos, stock mínimo, consumo por serviço |
-| F38 | Gestão de Salas/Recursos | Recurso obrigatório por marcação, evita dupla ocupação |
-| F39 | QR Code de Marcação | QR que aponta para booking público (PNG descarregável) |
-| F40 | Widget Embed | Snippet JS para embutir o formulário no website do cliente |
-| F41 | Fichas Clínicas | Campos de saúde personalizados, consentimentos digitais |
+### F41 — Fichas Clínicas 🔄
+**Branch:** `feature/f36-f41-stocks-rooms-qr-widget-clinical`
+
+`ClinicalRecord` (alergias, notas_saude, consentimento digital). `ClinicalNote` com notas individuais por barbeiro. Endpoints CRUD para admin/barbeiro. Migração Alembic `e5f6a7b8c9d0`.
 
 ---
 
@@ -193,4 +196,4 @@ Modelo `Invoice` (appointment_id, invoice_number, invoice_url, status draft/sent
 | `backend/core/notifications.py` | Serviço de email (SMTP) |
 | `backend/core/whatsapp.py` | Serviço WhatsApp (CallMeBot) |
 | `repositories/base_repository.py` | Soft-delete + tenant filtering automático |
-| `alembic/versions/` | Migrações encadeadas do schema | a568049 (feat(f28-f30-f31): service packs, loyalty points, birthday messages)
+| `alembic/versions/` | Migrações encadeadas do schema |

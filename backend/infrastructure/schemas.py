@@ -117,6 +117,7 @@ class AppointmentCreateRequest(BaseModel):
     client_id: int
     service_id: int
     data_inicio: datetime
+    resource_id: int | None = None  # F38 — optional room/resource
 
 
 class AppointmentRescheduleRequest(BaseModel):
@@ -525,3 +526,107 @@ class InvoiceResponse(BaseModel):
     invoice_url: str | None
     status: str
     criado_em: datetime
+
+
+# ── Products / Stock (F37) ───────────────────────────────────────────────────
+
+
+class ProductCreate(BaseModel):
+    nome: str
+    descricao: str | None = None
+    stock_atual: int = 0
+    stock_minimo: int = 0
+    preco_unitario: float = 0
+
+
+class ProductUpdate(BaseModel):
+    nome: str | None = None
+    descricao: str | None = None
+    stock_atual: int | None = None
+    stock_minimo: int | None = None
+    preco_unitario: float | None = None
+
+
+class ProductResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nome: str
+    descricao: str | None
+    stock_atual: int
+    stock_minimo: int
+    preco_unitario: float
+    tenant_id: int
+
+
+class StockAdjustRequest(BaseModel):
+    delta: int
+    reason: str
+
+
+class ServiceProductCreate(BaseModel):
+    service_id: int
+    product_id: int
+    quantidade: int = Field(ge=1)
+
+
+class ServiceProductResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    service_id: int
+    product_id: int
+    quantidade: int
+    tenant_id: int
+
+
+# ── Resources / Rooms (F38) ─────────────────────────────────────────────────
+
+
+class ResourceCreate(BaseModel):
+    nome: str
+    tipo: str
+
+
+class ResourceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nome: str
+    tipo: str
+    tenant_id: int
+
+
+# ── Clinical Records (F41) ──────────────────────────────────────────────────
+
+
+class ClinicalRecordUpsert(BaseModel):
+    alergias: str | None = None
+    notas_saude: str | None = None
+
+
+class ClinicalRecordResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    client_id: int
+    tenant_id: int
+    alergias: str | None
+    notas_saude: str | None
+    consentimento_assinado: bool
+    consentimento_data: datetime | None
+
+
+class ClinicalNoteCreate(BaseModel):
+    nota: str
+
+
+class ClinicalNoteResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    clinical_record_id: int
+    tenant_id: int
+    nota: str
+    criado_em: datetime
+    barber_id: int | None

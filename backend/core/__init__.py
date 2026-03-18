@@ -6,6 +6,7 @@ from backend.core.barbershop import Barbershop
 from backend.core.barbershop_membership import BarbershopMembership
 from backend.core.campaign import Campaign
 from backend.core.client import Client
+from backend.core.clinical import ClinicalNote, ClinicalRecord
 from backend.core.feedback import Feedback
 from backend.core.invoice import Invoice
 from backend.core.loyalty import LoyaltyAccount, LoyaltyTransaction
@@ -14,6 +15,8 @@ from backend.core.membership_roles import (
     MEMBERSHIP_MEMBER,
     MEMBERSHIP_OWNER,
 )
+from backend.core.product import Product, ServiceProduct
+from backend.core.resource import Resource
 from backend.core.roles import ADMIN_ROLE, ALLOWED_ROLES, BARBER_ROLE, CLIENT_ROLE
 from backend.core.scheduling import (
     ALLOWED_BLOCK_KINDS,
@@ -29,28 +32,34 @@ from backend.core.webhook import Webhook
 
 __all__ = [
     "ADMIN_ROLE",
+    "ALLOWED_BLOCK_KINDS",
     "ALLOWED_MEMBERSHIP_ROLES",
     "ALLOWED_ROLES",
-    "BARBER_ROLE",
-    "BarberAvailability",
     "Appointment",
-    "ClientPack",
-    "Feedback",
+    "BARBER_ROLE",
+    "BREAK_BLOCK_KIND",
+    "Barber",
+    "BarberAvailability",
     "BarberBlock",
+    "Barbershop",
     "BarbershopMembership",
     "CLIENT_ROLE",
-    "BREAK_BLOCK_KIND",
-    "Barbershop",
-    "Barber",
     "Client",
+    "ClientPack",
+    "ClinicalNote",
+    "ClinicalRecord",
     "DAY_OFF_BLOCK_KIND",
+    "Feedback",
     "LoyaltyAccount",
     "LoyaltyTransaction",
     "MANUAL_BLOCK_KIND",
     "MEMBERSHIP_MEMBER",
     "MEMBERSHIP_OWNER",
+    "Product",
+    "Resource",
     "Service",
     "ServicePack",
+    "ServiceProduct",
     "Tenant",
     "User",
     "Webhook",

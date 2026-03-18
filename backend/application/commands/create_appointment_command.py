@@ -11,3 +11,4 @@ class CreateAppointmentCommand(Request):
     service_id: int
     start_at: datetime
     tenant_id: int | None = None
+    resource_id: int | None = None  # F38 — optional room/resource

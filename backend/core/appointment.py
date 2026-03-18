@@ -29,3 +29,7 @@ class Appointment(Base):
     payment_status = Column(
         String, nullable=False, default="not_required", index=True,
     )
+    # F38 — Room/resource booking
+    resource_id = Column(
+        Integer, ForeignKey("resources.id"), nullable=True, index=True
+    )
