@@ -149,4 +149,45 @@ class CreateAppointmentHandler(RequestHandler[CreateAppointmentCommand, object])
         except Exception:  # noqa: BLE001
             pass
 
+        # Award loyalty points — 1 point per minute of service (best-effort)
+        try:
+            from backend.core.loyalty import LoyaltyAccount, LoyaltyTransaction
+
+            account = (
+                self.db.query(LoyaltyAccount)
+                .filter(
+                    LoyaltyAccount.client_id == command.client_id,
+                    LoyaltyAccount.tenant_id == tenant_id,
+                )
+                .first()
+            )
+            if account is None:
+                account = LoyaltyAccount(
+                    client_id=command.client_id,
+                    tenant_id=tenant_id,
+                    pontos_total=0,
+                    pontos_disponiveis=0,
+                    updated_at=now,
+                )
+                self.db.add(account)
+                self.db.flush()
+
+            pontos = service.duracao_minutos
+            account.pontos_total += pontos
+            account.pontos_disponiveis += pontos
+            account.updated_at = now
+
+            tx = LoyaltyTransaction(
+                loyalty_account_id=account.id,
+                appointment_id=appointment.id,
+                pontos=pontos,
+                tipo="earn",
+                criado_em=now,
+                descricao=f"Serviço: {service.nome}",
+            )
+            self.db.add(tx)
+            self.db.commit()
+        except Exception:  # noqa: BLE001
+            pass
+
         return appointment

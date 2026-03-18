@@ -54,6 +54,13 @@ class WhatsAppService(ABC):
         appointment_id: int,
     ) -> None: ...
 
+    @abstractmethod
+    def notify_client_birthday(
+        self,
+        client_phone: str,
+        client_name: str,
+    ) -> None: ...
+
 
 class LogWhatsAppService(WhatsAppService):
 
@@ -80,6 +87,9 @@ class LogWhatsAppService(WhatsAppService):
             "[WhatsApp] Reagendamento → %s (%s): %s - %s nova hora: %s (id=%s)",
             barber_name, barber_phone, client_name, service_name, new_start_at, appointment_id,
         )
+
+    def notify_client_birthday(self, client_phone, client_name):
+        logger.info("[WhatsApp] Aniversário → %s (%s)", client_name, client_phone)
 
 
 class CallMeBotWhatsAppService(WhatsAppService):
@@ -125,6 +135,12 @@ class CallMeBotWhatsAppService(WhatsAppService):
         self._send(
             barber_phone,
             f"Agendamento reagendado: {client_name} - {service_name} nova hora: {new_start_at.strftime('%d/%m/%Y %H:%M')}.",
+        )
+
+    def notify_client_birthday(self, client_phone, client_name):
+        self._send(
+            client_phone,
+            f"Feliz Aniversário, {client_name}! 🎉 A equipa deseja-lhe um excelente dia. Tem 10% de desconto no próximo agendamento!",
         )
 
 

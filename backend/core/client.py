@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String
 
 from backend.infrastructure.database import Base
 
@@ -14,6 +14,9 @@ class Client(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     deleted = Column(Boolean, nullable=False, default=False, index=True)
     deleted_at = Column(DateTime, nullable=True)
+    # F31 — Birthday messages
+    data_nascimento = Column(Date, nullable=True)
+    birthday_msg_year = Column(Integer, nullable=True)  # last year a message was sent
 
 
 # Legacy alias kept to avoid breaking existing imports while the codebase is normalized.

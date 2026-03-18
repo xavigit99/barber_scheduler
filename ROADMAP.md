@@ -1,36 +1,28 @@
 # ROADMAP — barber_scheduler
 
-> Sistema de gestão de barbearias construído em FastAPI + SQLAlchemy com arquitetura CQRS via padrão Mediator (`diator`).
-> Suporte a múltiplos perfis (`admin`, `barbeiro`, `cliente`) com tenant foundation para evolução multi-barbearia.
+> Sistema de gestão de barbearias construído em FastAPI + SQLAlchemy com arquitetura CQRS via Mediator (`diator`).
+> Suporte a múltiplos perfis (`admin`, `barbeiro`, `cliente`) com multi-tenant foundation.
 >
-> **Referência:** 15 de março de 2026
+> **Última atualização:** 18 de março de 2026
 
 ---
 
 ## Estado por Fase
 
-| Fase | Nome | Estado | Alvo |
-|------|------|--------|------|
-| F0 | Fundação Técnica | ✅ Completo | — |
-| F1 | Auth & Contexto Base | ✅ Completo | — |
-| F2 | Dados Mestres | ✅ Completo | — |
-| F3 | Disponibilidade e Slots | ✅ Completo | — |
-| F4 | Appointments Core | ✅ Completo | — |
-| F5 | Superfícies Operacionais | ✅ Completo | — |
-| F6 | Produção e Operação | ✅ Completo | — |
-| F7 | Post-MVP | ✅ Completo | — |
-| F8 | Multi-Tenant Hardening | ✅ Completo | — |
-| F9 | Observabilidade, Auditoria & Compliance | ✅ Completo | — |
-| F12 | Portal do Cliente (frontend) | ✅ Completo | — |
-| F13 | Dashboard de Relatórios (frontend) | ✅ Completo | — |
-| F14 | Reagendamento de Appointments (frontend) | ✅ Completo | — |
-| F15 | Perfil do Cliente (frontend) | ✅ Completo | — |
-| F16 | Painel do Barbeiro Melhorado (frontend) | ✅ Completo | — |
-| F17 | Compliance & Auditoria (frontend) | ✅ Completo | — |
-| F18 | Feedback & Memberships (frontend) | ✅ Completo | — |
-| F19 | Registo de Barbeiro (backend + frontend) | ✅ Completo | — |
-| F20 | CI/CD + Branch Protection | ✅ Completo | — |
-| F21–F22 | Plataforma & Inovação | ⬜ Planeado | Q3 2026 |
+| Fase | Nome | Estado | Branch / PR |
+|------|------|--------|-------------|
+| F0–F5 | Fundação + Core | ✅ Completo | `main` |
+| F6 | Produção e Operação | ✅ Completo | `main` |
+| F7 | Post-MVP (Booking Público + Notificações) | ✅ Completo | `main` |
+| F8 | Multi-Tenant Hardening | ✅ Completo | `main` |
+| F9 | Observabilidade, Auditoria & Compliance | ✅ Completo | `main` |
+| F12–F20 | Frontend Completo + CI/CD | ✅ Completo | `main` |
+| F21–F22 | Email SMTP + Docker Produção | ✅ Completo | PR #29 |
+| F23–F24 | Webhooks + Marcações Recorrentes | ✅ Completo | PR #30 |
+| F25–F27 | Lembretes + Confirmação + Grupo | ✅ Completo | PR #32 |
+| F28–F31 | Packs + Fidelização + Aniversários | 🔄 Em curso | `feature/f28-f31-packs-loyalty-birthday` |
+| F32–F35 | Segmentação + Campanhas + Faturação | ⬜ Planeado | — |
+| F36–F41 | Stocks + Salas + QR + Widget + Clínicas | ⬜ Futuro | — |
 
 ---
 
@@ -40,11 +32,10 @@
 - Estrutura de módulos: `api/`, `application/`, `core/`, `infrastructure/`, `repositories/`
 - Docker Compose com PostgreSQL + FastAPI
 - CI mínima via GitHub Actions (`make test`)
-- Makefile com comandos de dev (`test`, `run`, `install`)
 - `BaseRepository` com soft-delete e tenant filtering automático
 
 ### F1 — Auth & Contexto Base ✅
-- Modelo `User` com roles (`admin`, `barbeiro`, `cliente`)
+- Modelo `User` com roles (`admin`, `barbeiro`, `cliente`) + multi-role support
 - JWT tokens com expiração configurável
 - RBAC nas rotas via `auth_dependencies.py`
 - Tenant foundation: entidade `Tenant` + `Barbershop` com `tenant_id` 1:1
@@ -63,150 +54,123 @@
 - `BarberBlock`: pausas, folgas e bloqueios manuais (3 tipos)
 - `GetAvailableSlotsHandler`: cálculo de slots livres (15min, timezone-aware)
 - Validação de overlaps e bloqueios
-- Testes de edge cases de disponibilidade
 
 ### F4 — Appointments Core ✅
-- Criar appointment com validação completa:
-  - Verifica barber, client e service existem
-  - Calcula `end_at` a partir da duração do serviço
-  - Valida janela de disponibilidade semanal
-  - Valida bloqueios ativos
-  - Detecta conflito → `409 CONFLICT`
-- Remarcar appointment (mesmas validações, exclui self do conflict check)
+- Criar appointment com validação completa (barber, client, service, disponibilidade, conflito)
+- Remarcar appointment (mesmas validações)
 - Cancelar appointment (soft-delete)
 - Listar por barbeiro e por cliente (com filtro opcional de data)
 
 ### F5 — Superfícies Operacionais ✅
-- `GET /appointments/barbers/{barber_id}` — agenda diária do barbeiro
-- `GET /appointments/clients/me/appointments` — self-service do cliente
+- Agenda diária do barbeiro + self-service do cliente
 - Segregação de acesso por perfil (admin vê tudo, barbeiro vê os seus, cliente vê os seus)
 
----
+### F6 — Produção e Operação ✅
+- Health check com `SELECT 1`
+- Logging estruturado (JSON formatter)
+- CORS configurável, rate limiting (`slowapi`), security headers
+- Tenant isolation em appointments + ownership guards DB-based
+- Documentação completa no README
 
-## F6 — Produção e Operação ✅
+### F7 — Post-MVP ✅
+- Página pública de booking (`/public/`) sem autenticação
+- `NotificationService` ABC com `LogNotificationService` e `SmtpNotificationService`
+- Relatórios operacionais: `/admin/reports/daily` e `/admin/reports/revenue`
 
-### Concluído (15 Mar 2026)
-- ✅ `main.py` corrigido — todos os 8 routers registados
-- ✅ `GET /health/` — health check com `SELECT 1`
-- ✅ `echo=False` no SQLAlchemy engine
-- ✅ Tenant isolation em appointments — `tenant_id` no modelo `Appointment` + propagação nos handlers
-- ✅ Ownership guards — `user_id` em `Barber` e `Client`, guards DB-based
+### F8 — Multi-Tenant Hardening ✅
+- `BarbershopMembership` (barber_id, barbershop_id, role) — um barbeiro em várias barbearias
+- Soft-delete uniforme em todos os recursos mutáveis
+- Tenant-aware queries + testes end-to-end de isolamento
 
-- ✅ BL-031: CI/CD Hardening — ruff lint no CI, `requirements-dev.txt`, `ruff.toml`, `make lint`
-- ✅ BL-032: Logging Estruturado — `logging_config.py` com JSON formatter, setup no `main.py`
-- ✅ BL-034: Hardening de Segurança — CORS configurável, rate limiting (`slowapi`), security headers middleware
-- ✅ BL-035: Documentação de Deploy e Operação — README completo com setup, API, variáveis de ambiente e runbook
+### F9 — Observabilidade, Auditoria & Compliance ✅
+- Audit trail (`/admin/audit`)
+- Tenant stats (`/admin/stats`)
+- Data retention/purge (`/admin/purge`)
+- Compliance export GDPR (`/admin/export`)
 
----
+### F12–F20 — Frontend Completo ✅ (Mar 2026)
+- F12: Portal do cliente público (registo, login, booking)
+- F13: Dashboard de relatórios admin (KPIs, receita, agendamentos)
+- F14: Reagendamento pelo cliente (modal + slots)
+- F15: Perfil do cliente (editar dados + password)
+- F16: Painel do barbeiro melhorado (disponibilidade + nomes)
+- F17: Compliance & Auditoria UI (audit log, export, purge)
+- F18: Feedback & Memberships UI
+- F19: Registo atómico de barbeiro (User + Barber em transação)
+- F20: CI/CD GitHub Actions (lint + testes + build frontend)
 
-## F7 — Post-MVP ✅ (Alvo: 3 Mai 2026)
+### F21–F22 — Email SMTP + Docker Produção ✅
+- `SmtpNotificationService` — emails reais via SMTP configurável
+- CallMeBot WhatsApp para barbeiros (novo agendamento, cancelamento, reagendamento)
+- Dockerfile multi-stage + docker-compose produção-pronto
+- Variáveis de ambiente documentadas em `.env.example`
 
-#### BL-036 + BL-037: Página Pública de Booking ✅
-- `GET /public/barbershops/{id}/barbers/{barber_id}/slots` — sem autenticação
-- `POST /public/appointments` — cria appointment como cliente (find-or-create client by email)
+### F23–F24 — Webhooks + Marcações Recorrentes ✅
+- `Webhook` model + dispatcher HMAC-SHA256 + registo de eventos
+- `POST /webhooks` — CRUD de webhooks por tenant
+- `POST /appointments/recurring` — semanal/quinzenal até 12 ocorrências
+- Migração Alembic encadeada (`f1a3c5e7b9d2`)
 
-#### BL-038: Abstração de Notificações ✅
-- Interface desacoplada para email/SMS/WhatsApp (`NotificationService` ABC)
-- `LogNotificationService` — implementação log-based para dev/staging
-- Confirmação, cancelamento e remarcação integrados nos handlers
-
-#### BL-040: Relatórios Operacionais Iniciais ✅
-- `GET /admin/reports/daily` — appointments do dia por barbeiro (admin-only)
-- `GET /admin/reports/revenue` — faturação por período com breakdown por serviço (admin-only)
-
----
-
-## F8 — Multi-Tenant Hardening ✅
-
-#### BL-041: Modelo de Memberships Multi-Barbershop ✅
-- `BarbershopMembership` (barber_id, barbershop_id, role)
-- Um barbeiro pode pertencer a várias barbearias
-
-#### BL-042 + BL-043: Soft Delete Uniforme + RBAC Multi-Shop ✅
-- Auditar soft-delete em todos os recursos mutáveis
-- Guards que validam tenant ownership antes de qualquer ação mutável
-
-#### BL-044 + BL-045: Tenant-Aware Queries + Testes ✅
-- Propagar filtros tenant em todos os handlers e queries
-- Testes end-to-end de isolamento entre tenants
-
----
-
-## F9 — Observabilidade, Auditoria & Compliance ✅
-
-#### BL-046: Audit Trail ✅
-- `GET /admin/audit?entity=barber&from_date=…&to_date=…`
-- Registos soft-deleted do tenant com filtros por data
-
-#### BL-047: Tenant Stats ✅
-- `GET /admin/stats`
-- Contagens e receita do tenant no mês corrente
-
-#### BL-048: Data Retention (purge) ✅
-- `DELETE /admin/purge` body: `{"entity": "barber", "older_than_days": 90}`
-- Hard-delete de registos antigos soft-deleted; retorna `purged_count`
-
-#### BL-049: Compliance Export (GDPR) ✅
-- `GET /admin/export`
-- JSON com todos os dados do tenant (activos + deleted) para GDPR/LGPD
-
-#### BL-050: Testes ✅
-- Testes unitários para todos os handlers F9 (audit, stats, purge, export)
+### F25–F27 — Lembretes + Confirmação + Grupo ✅ (PR #32)
+- **F25 Lembretes automáticos:** APScheduler job (30min) envia email + WhatsApp ~24h antes; `reminder_sent_at` previne duplicados; `REMINDER_HOURS_BEFORE` / `REMINDER_CHECK_INTERVAL_MINUTES` configuráveis
+- **F26 Confirmação de presença:** UUID token por agendamento; link de confirmação no email de booking; `GET /appointments/confirm/{token}` público; `status` (pending/confirmed) + `confirmed_at`
+- **F27 Marcações de grupo:** `service.max_capacity` para slots partilhados; `POST /appointments/group` com lista de `client_ids`; `group_id` liga as marcações; validação de capacidade
+- Migração Alembic `b2c3d4e5f6a7`
 
 ---
 
-## F12–F20 — Frontend Completo ✅ (Mar 2026)
+## Em Curso
 
-- **F12:** Portal do cliente público (registo, login, booking sem conta)
-- **F13:** Dashboard de relatórios admin (KPIs, receita, agendamentos do dia)
-- **F14:** Reagendamento de appointments pelo cliente (modal + slots)
-- **F15:** Perfil do cliente (editar dados + alterar password)
-- **F16:** Painel do barbeiro melhorado (nomes de clientes/serviços + gestão de disponibilidade)
-- **F17:** Compliance & Auditoria UI (audit log, export GDPR, purge)
-- **F18:** Feedback & Memberships UI (avaliações admin, membros por barbearia)
-- **F19:** Registo atómico de barbeiro (User + Barber em transação única)
-- **F20:** CI/CD com GitHub Actions (lint + testes + build frontend em PRs)
+### F28 — Packs de Sessões 🔄
+**Branch:** `feature/f28-f31-packs-loyalty-birthday`
 
----
+`ServicePack` (nome, service_id, n_sessoes, preco, tenant_id). `ClientPack` regista a compra por cliente (sessoes_restantes, comprado_em, expira_em). Decremento automático ao criar agendamento quando cliente tem pack ativo para aquele serviço. `GET /packs/me` para o cliente ver os seus packs.
 
-## F21–F22 — Plataforma & Inovação ⬜ (Alvo: Q3 2026)
+**Endpoints:**
+- `POST /service-packs` — criar pack (admin)
+- `GET /service-packs` — listar packs do tenant
+- `POST /client-packs` — comprar pack (admin/client)
+- `GET /client-packs/me` — packs do cliente autenticado
+- `GET /client-packs/{id}` — detalhe de um pack
 
-- **F21:** API pública para parceiros, onboarding automatizado
-- **F22:** Agenda multi-slot e recorrente, notificações reais (email/WhatsApp)
+### F30 — Cartão de Fidelização 🔄
+**Branch:** `feature/f28-f31-packs-loyalty-birthday`
 
----
+`LoyaltyAccount` por cliente/tenant com `pontos_total` e `pontos_disponiveis`. `LoyaltyTransaction` regista ganhos (por serviço) e resgates. Pontos ganhos = `duracao_minutos` do serviço. `GET /loyalty/me` para o cliente. `POST /loyalty/redeem` para resgatar pontos em desconto.
 
-## Resumo de Estimativas
+### F31 — Mensagens de Aniversário 🔄
+**Branch:** `feature/f28-f31-packs-loyalty-birthday`
 
-| Fase | O Que Falta | Estimativa | Alvo |
-|------|-------------|-----------|------|
-| F6 Produção | Migrations + CI/CD + Logging + Segurança + Docs | 2 semanas | 12 Abr 2026 |
-| F7 Post-MVP | Public booking + Notificações + Relatórios | 3 semanas | 3 Mai 2026 |
-| F8 Multi-Tenant | Memberships + Soft-delete + RBAC + Queries | 2 semanas | 17 Mai 2026 |
-| F9–F20 Frontend & CI | UI completa + CI/CD | ✅ Completo | Mar 2026 |
-| F21–F22 Plataforma | APIs externas, Inovação | 4 semanas | Q3 2026 |
-
-**MVP completo:** março de 2026 ✅
+Campo `data_nascimento` (Date, nullable) no modelo `Client`. APScheduler job diário às 09:00 verifica clientes com aniversário hoje (dia + mês). Envia email + WhatsApp personalizado. `birthday_msg_year` previne envio duplo no mesmo ano.
 
 ---
 
-## Critérios de MVP Completo
+## Planeado
 
-- [x] Auth e roles ativos
-- [x] Tenant foundation
-- [x] Clients, barbers, services completos
-- [x] Disponibilidade semanal e exceções
-- [x] Appointments: create, reschedule, cancel
-- [x] Conflitos bloqueados com `409`
-- [x] Agenda diária disponível
-- [x] `main.py` corrigido — todos os endpoints acessíveis
-- [x] Tenant isolation completo em appointments
-- [x] Migrations formais (Alembic — delta migrations para schema existente)
-- [x] CI com lint, testes e build frontend
-- [x] Logging estruturado
-- [ ] Healthcheck estável
-- [x] CORS, rate limiting, security headers
-- [x] Documentação mínima de setup, API e operação
+### F32 — Segmentação de Clientes ⬜
+Filtros avançados: inativos há X dias, gasto mínimo, serviço preferido, frequência de visitas. Base para campanhas de marketing segmentadas.
+
+### F33 — Campanhas SMS/Email ⬜
+Editor de campanhas. Envio em massa para segmentos. Créditos SMS via Twilio/Vonage. Agendamento de envio.
+
+### F34 — Pagamentos Online (Stripe) ⬜
+Integração Stripe Checkout. Pré-pagamento no booking público. Webhook Stripe. Campo `payment_status` (pending/paid/refunded). Reembolso automático no cancelamento.
+
+### F35 — Faturação Certificada (PT) ⬜
+Integração InvoiceXpress ou Moloni. Faturas com ATCUD, séries, QR code fiscal. Conformidade AT. Envio automático por email.
+
+---
+
+## Futuro
+
+| # | Funcionalidade | Descrição |
+|---|----------------|-----------|
+| F36 | SAF-T | Exportação SAF-T-PT conforme AT |
+| F37 | Gestão de Stocks | Produtos, stock mínimo, consumo por serviço |
+| F38 | Gestão de Salas/Recursos | Recurso obrigatório por marcação, evita dupla ocupação |
+| F39 | QR Code de Marcação | QR que aponta para booking público (PNG descarregável) |
+| F40 | Widget Embed | Snippet JS para embutir o formulário no website do cliente |
+| F41 | Fichas Clínicas | Campos de saúde personalizados, consentimentos digitais |
 
 ---
 
@@ -219,11 +183,13 @@
 | Base de dados | PostgreSQL |
 | Arquitetura | CQRS via Mediator (`diator`) |
 | Auth | JWT (`python-jose`) |
-| Migrations | Alembic (planeado — F6) |
+| Migrations | Alembic |
 | Testes | pytest + httpx |
+| Scheduler | APScheduler |
+| Notificações | SMTP + CallMeBot (WhatsApp) |
 | Contentor | Docker Compose |
 | CI | GitHub Actions |
-| Lint | ruff (planeado — F6) |
+| Lint | ruff |
 
 ---
 
@@ -231,129 +197,13 @@
 
 | Ficheiro | Propósito |
 |----------|-----------|
-| `main.py` | Entry point — registar todos os routers |
-| `meditor.py` | DI container via diator |
+| `main.py` | Entry point — routers + APScheduler lifespan |
+| `meditor.py` | DI container via diator (auto-discovery de handlers) |
 | `backend/core/*.py` | Entidades SQLAlchemy + regras de negócio |
 | `backend/infrastructure/schemas.py` | Schemas Pydantic para HTTP I/O |
 | `backend/api/routes/*.py` | Routers FastAPI |
-| `backend/api/error_http.py` | Mapeamento de exceções → HTTP status codes |
-| `backend/api/auth_dependencies.py` | RBAC e extração de tenant do header |
+| `backend/core/reminders.py` | Job de lembretes automáticos |
+| `backend/core/notifications.py` | Serviço de email (SMTP) |
+| `backend/core/whatsapp.py` | Serviço WhatsApp (CallMeBot) |
 | `repositories/base_repository.py` | Soft-delete + tenant filtering automático |
-| `backend/application/handlers/appointment/` | Lógica core de appointments |
-| `backend/core/scheduling.py` | Cálculo de slots (timezone-aware, 15min) |
-
-  ## F25 — Lembretes Automáticos
-    **Status:** Planeado | **Branch:** `feature/f25-f27-reminders-recurring-group`
-
-    APScheduler job que corre de hora em hora e envia reminder X horas antes do agendamento via email (SMTP) + WhatsApp (CallMeBot). Coluna `reminder_sent_at` na tabela `appointments` para evitar envio duplicado.
-
-    ---
-
-    ## F26 — Confirmação de Presença
-    **Status:** Planeado | **Branch:** `feature/f25-f27-reminders-recurring-group`
-
-    Token único (UUID) gerado no agendamento. Email/WhatsApp enviado com link `/confirm/{token}`. Cliente clica → status muda para `confirmed`. Dashboard mostra confirmados vs pendentes. Token expira após a data do
-    agendamento.
-
-    ---
-
-    ## F27 — Marcações de Grupo
-    **Status:** Planeado | **Branch:** `feature/f25-f27-reminders-recurring-group`
-
-    Tabela `group_appointments` com `max_participants`. Clientes associados via `group_appointment_participants`. Rota pública de booking suporta juntar-se a grupo existente. Bloqueio automático quando lotação máxima
-    atingida.
-
-    ---
-
-    ## F28 — Packs de Sessões
-    **Status:** Planeado
-
-    Entidade `ServicePack` (n sessões, preço total, tenant_id). `PackUsage` regista cada utilização. Decremento automático a cada agendamento. Vista do cliente mostra sessões restantes. Alerta quando pack termina.
-
-    ---
-
-    ## F29 — Pagamentos Online (Stripe)
-    **Status:** Planeado
-
-    Integração Stripe Checkout. Pré-pagamento no momento da marcação pública. Webhook Stripe para confirmar pagamento. Campo `payment_status` no agendamento (`pending`, `paid`, `refunded`). Reembolso automático no
-    cancelamento.
-
-    ---
-
-    ## F30 — Cartão de Fidelização / Pontos
-    **Status:** Planeado
-
-    `LoyaltyAccount` por cliente/tenant. Pontos atribuídos por serviço concluído (configurável). Resgate em desconto na próxima marcação. QR code do cliente para apresentar no balcão.
-
-    ---
-
-    ## F31 — Mensagens de Aniversário
-    **Status:** Planeado
-
-    Campo `data_nascimento` no cliente. Job diário (APScheduler) que verifica aniversários do dia e envia email/WhatsApp com mensagem personalizada + oferta opcional (desconto ou serviço grátis).
-
-    ---
-
-    ## F32 — Segmentação de Clientes
-    **Status:** Planeado
-
-    Filtros avançados na listagem de clientes: inativos há X dias, gasto mínimo, serviço preferido, frequência de visitas. Base para campanhas de marketing segmentadas.
-
-    ---
-
-    ## F33 — Campanhas SMS/Email
-    **Status:** Futuro
-
-    Editor de campanhas. Envio em massa para segmentos. Créditos SMS via Twilio/Vonage. Agendamento de envio. Métricas de abertura e cliques.
-
-    ---
-
-    ## F34 — Faturação Certificada (PT)
-    **Status:** Futuro
-
-    Integração InvoiceXpress ou Moloni. Emissão de faturas com ATCUD, séries, QR code fiscal. Conformidade AT. Envio automático por email ao cliente após pagamento.
-
-    ---
-
-    ## F35 — SAF-T
-    **Status:** Futuro
-
-    Exportação SAF-T-PT conforme Autoridade Tributária. Obrigatório para software de faturação em Portugal. Gerado mensalmente ou a pedido.
-
-    ---
-
-    ## F36 — Gestão de Stocks
-    **Status:** Futuro
-
-    Produtos com stock, stock mínimo, associação produto→serviço. Alerta de reposição. Consumo automático quando serviço é realizado.
-
-    ---
-
-    ## F37 — Gestão de Salas/Recursos
-    **Status:** Futuro
-
-    Recurso (sala, cadeira, equipamento) obrigatório por marcação. Reserva automática. Evita dupla ocupação do mesmo recurso.
-
-    ---
-
-    ## F38 — QR Code de Marcação
-    **Status:** Futuro
-
-    Gerar QR code que aponta para a página pública de booking do negócio. Descarregável em PNG para imprimir e colocar na loja.
-
-    ---
-
-    ## F39 — Widget Embed
-    **Status:** Futuro
-
-    Snippet JS para embutir o formulário de booking no website do cliente. Configurável por tenant_id + tema.
-
-    ---
-
-    ## F40 — Fichas Clínicas
-    **Status:** Futuro (clínicas/fisioterapia)
-
-    Campos de saúde personalizados, alergias, tratamentos anteriores, evolução com fotos. Assinatura digital de consentimentos (RGPD).
-
-    ---
-    O agente principal está a implementar F25-F27 agora. Quando terminar, podes pedir /commit e depois gh pr create.
+| `alembic/versions/` | Migrações encadeadas do schema | a568049 (feat(f28-f30-f31): service packs, loyalty points, birthday messages)
