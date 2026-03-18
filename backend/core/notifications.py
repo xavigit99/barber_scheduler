@@ -34,6 +34,9 @@ class NotificationService(ABC):
     @abstractmethod
     def send_reminder(self, notif: AppointmentNotification) -> None: ...
 
+    @abstractmethod
+    def send_birthday(self, client_name: str, client_email: str) -> None: ...
+
 
 class LogNotificationService(NotificationService):
     """Log-based implementation — replace with real email/SMS in production."""
@@ -83,6 +86,12 @@ class LogNotificationService(NotificationService):
                 "client_email": notif.client_email,
                 "start_at": notif.start_at.isoformat(),
             },
+        )
+
+    def send_birthday(self, client_name: str, client_email: str) -> None:
+        logger.info(
+            "Birthday message",
+            extra={"event": "client.birthday", "client_email": client_email},
         )
 
 
@@ -169,6 +178,20 @@ class SmtpNotificationService(NotificationService):
                 f"  Barbeiro: {notif.barber_name}\n"
                 f"  Data:     {notif.start_at:%d/%m/%Y às %H:%M}\n\n"
                 f"ID do agendamento: #{notif.appointment_id}\n"
+            ),
+        )
+
+    def send_birthday(self, client_name: str, client_email: str) -> None:
+        self._send(
+            to=client_email,
+            subject=f"Feliz Aniversário, {client_name}!",
+            body=(
+                f"Olá {client_name},\n\n"
+                f"A toda a equipa deseja-lhe um feliz aniversário! 🎉\n\n"
+                f"Como presente, tem 10% de desconto no próximo agendamento.\n"
+                f"Basta mencionar este email ao marcar.\n\n"
+                f"Com os melhores cumprimentos,\n"
+                f"A equipa\n"
             ),
         )
 

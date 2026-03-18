@@ -143,6 +143,7 @@ class ClientBase(BaseModel):
     nome: str
     email: str
     telefone: str | None = None
+    data_nascimento: date | None = None
 
 
 class ClientCreate(ClientBase):
@@ -154,6 +155,7 @@ class ClientUpdate(BaseModel):
     email: str | None = None
     telefone: str | None = None
     tenant_id: int | None = None
+    data_nascimento: date | None = None
 
 
 class ClientResponse(ClientBase):
@@ -391,3 +393,73 @@ class GroupAppointmentRequest(BaseModel):
 class GroupAppointmentResponse(BaseModel):
     group_id: str
     created: list[AppointmentResponse]
+
+
+# ── Service Packs (F28) ───────────────────────────────────────────────────────
+
+
+class ServicePackCreate(BaseModel):
+    nome: str
+    service_id: int
+    n_sessoes: int = Field(ge=1)
+    preco: float = Field(ge=0)
+
+
+class ServicePackResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nome: str
+    service_id: int
+    tenant_id: int
+    n_sessoes: int
+    preco: float
+
+
+class ClientPackCreate(BaseModel):
+    client_id: int
+    service_pack_id: int
+    expira_em: date | None = None
+
+
+class ClientPackResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    client_id: int
+    service_pack_id: int
+    tenant_id: int
+    sessoes_restantes: int
+    comprado_em: datetime
+    expira_em: date | None
+
+
+# ── Loyalty (F30) ─────────────────────────────────────────────────────────────
+
+
+class LoyaltyAccountResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    client_id: int
+    tenant_id: int
+    pontos_total: int
+    pontos_disponiveis: int
+    updated_at: datetime
+
+
+class LoyaltyRedeemRequest(BaseModel):
+    pontos: int = Field(ge=1)
+    descricao: str | None = None
+
+
+class LoyaltyTransactionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    loyalty_account_id: int
+    appointment_id: int | None
+    pontos: int
+    tipo: str
+    criado_em: datetime
+    descricao: str | None
