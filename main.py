@@ -16,12 +16,15 @@ from backend.api.routes.auth_routes import router as auth_router
 from backend.api.routes.availability_routes import router as availability_router
 from backend.api.routes.barber_routes import router as barber_router
 from backend.api.routes.barbershop_routes import router as barbershop_router
+from backend.api.routes.campaign_routes import router as campaign_router
 from backend.api.routes.client_routes import router as client_router
 from backend.api.routes.feedback_routes import router as feedback_router
 from backend.api.routes.health_routes import router as health_router
+from backend.api.routes.invoice_routes import router as invoice_router
 from backend.api.routes.loyalty_routes import router as loyalty_router
 from backend.api.routes.membership_routes import router as membership_router
 from backend.api.routes.pack_routes import router as pack_router
+from backend.api.routes.payment_routes import router as payment_router
 from backend.api.routes.public_routes import router as public_router
 from backend.api.routes.report_routes import router as report_router
 from backend.api.routes.service_routes import router as service_router
@@ -128,5 +131,8 @@ app.include_router(feedback_router)
 app.include_router(webhook_router)
 app.include_router(pack_router)
 app.include_router(loyalty_router)
+app.include_router(campaign_router)
+app.include_router(payment_router)
+app.include_router(invoice_router)
 
 logger.info("Barber Scheduler API started", extra={"origins": _origins})

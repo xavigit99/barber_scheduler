@@ -25,3 +25,7 @@ class Appointment(Base):
     reminder_sent_at = Column(DateTime, nullable=True)
     # F27 — Group appointments
     group_id = Column(String, nullable=True, index=True)
+    # F34 — Stripe payments
+    payment_status = Column(
+        String, nullable=False, default="not_required", index=True,
+    )

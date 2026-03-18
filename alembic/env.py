@@ -35,8 +35,8 @@ if config.config_file_name is not None:
 # ---------------------------------------------------------------------------
 # Import models so they register on Base.metadata
 # ---------------------------------------------------------------------------
-from backend.infrastructure.database import Base  # noqa: E402
 import backend.core  # noqa: E402, F401 — registers all models on Base.metadata
+from backend.infrastructure.database import Base  # noqa: E402
 
 target_metadata = Base.metadata
 

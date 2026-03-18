@@ -463,3 +463,65 @@ class LoyaltyTransactionResponse(BaseModel):
     tipo: str
     criado_em: datetime
     descricao: str | None
+
+
+# -- Campaigns (F33) ----------------------------------------------------------
+
+
+class CampaignCreate(BaseModel):
+    nome: str
+    subject: str
+    body_template: str
+    segment_filters: str = "{}"  # JSON string with segment filter criteria
+
+
+class CampaignResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nome: str
+    subject: str
+    body_template: str
+    segment_filters: str
+    status: str
+    tenant_id: int
+    criado_em: datetime
+    enviado_em: datetime | None
+    total_sent: int
+
+
+# -- Payments (F34) -----------------------------------------------------------
+
+
+class CheckoutRequest(BaseModel):
+    appointment_id: int
+
+
+class CheckoutResponse(BaseModel):
+    checkout_url: str
+
+
+class AppointmentPaymentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    payment_status: str
+
+
+# -- Invoices (F35) -----------------------------------------------------------
+
+
+class InvoiceCreate(BaseModel):
+    appointment_id: int
+
+
+class InvoiceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    appointment_id: int
+    tenant_id: int
+    invoice_number: str
+    invoice_url: str | None
+    status: str
+    criado_em: datetime
