@@ -10,6 +10,22 @@ import { useToast } from '../../components/Toast';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Barbershop, Barber, Membership } from '../../types';
 
+const apiBaseUrl = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
+
+function buildBookingShareData(shop: Barbershop) {
+  const appBaseUrl = window.location.origin.replace(/\/$/, '');
+  const bookingUrl = `${appBaseUrl}/book/${shop.tenant_id}`;
+  const qrCodeUrl = `${apiBaseUrl}/public/qr/${shop.tenant_id}`;
+  const widgetScriptUrl = `${apiBaseUrl}/public/widget/${shop.tenant_id}`;
+  const widgetSnippet = `<script src="${widgetScriptUrl}" async></script>`;
+
+  return {
+    bookingUrl,
+    qrCodeUrl,
+    widgetSnippet,
+  };
+}
+
 export default function BarbershopsPage() {
   const [shops, setShops] = useState<Barbershop[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +34,7 @@ export default function BarbershopsPage() {
   const [nome, setNome] = useState('');
   const { toast } = useToast();
   const { selectTenant, tenantId } = useAuth();
+  const [shareShop, setShareShop] = useState<Barbershop | null>(null);
 
   /* Memberships modal */
   const [membershipsShop, setMembershipsShop] = useState<Barbershop | null>(null);
@@ -124,7 +141,18 @@ export default function BarbershopsPage() {
     toast(`Barbearia seleccionada: ${shop.nome}`, 'success');
   }
 
+  async function handleCopy(value: string, successMessage: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast(successMessage, 'success');
+    } catch {
+      toast('Não foi possível copiar automaticamente.', 'error');
+    }
+  }
+
   if (loading) return <Spinner />;
+
+  const shareData = shareShop ? buildBookingShareData(shareShop) : null;
 
   return (
     <div>
@@ -155,6 +183,9 @@ export default function BarbershopsPage() {
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => openMemberships(s)}>
                   Membros
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setShareShop(s)}>
+                  Partilha
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => openEdit(s)}>
                   Editar
@@ -227,6 +258,75 @@ export default function BarbershopsPage() {
             <Button type="submit">{editing ? 'Guardar' : 'Criar'}</Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        open={!!shareShop}
+        onClose={() => setShareShop(null)}
+        title={`Partilha de Booking — ${shareShop?.nome ?? ''}`}
+      >
+        {shareData && (
+          <div className="space-y-5">
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+              <p className="text-sm font-medium text-emerald-900">Link público de marcação</p>
+              <p className="mt-1 break-all font-mono text-xs text-emerald-800">{shareData.bookingUrl}</p>
+              <div className="mt-3 flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => handleCopy(shareData.bookingUrl, 'Link de booking copiado')}
+                >
+                  Copiar link
+                </Button>
+                <Button size="sm" variant="secondary" onClick={() => window.open(shareData.bookingUrl, '_blank', 'noopener,noreferrer')}>
+                  Abrir página
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">QR code para balcão ou redes sociais</p>
+                  <p className="text-xs text-slate-500">Aponta diretamente para a página pública de booking.</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => window.open(shareData.qrCodeUrl, '_blank', 'noopener,noreferrer')}
+                >
+                  Abrir QR
+                </Button>
+              </div>
+              <div className="flex justify-center rounded-lg bg-white p-4">
+                <img
+                  src={shareData.qrCodeUrl}
+                  alt={`QR code de booking da barbearia ${shareShop?.nome ?? ''}`}
+                  className="h-52 w-52 rounded-lg border border-slate-200 object-contain"
+                />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Widget embed</p>
+                  <p className="text-xs text-slate-500">Usa este snippet para embutir o booking num site externo.</p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => handleCopy(shareData.widgetSnippet, 'Snippet do widget copiado')}
+                >
+                  Copiar snippet
+                </Button>
+              </div>
+              <textarea
+                readOnly
+                value={shareData.widgetSnippet}
+                className="min-h-[88px] w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-700"
+              />
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
