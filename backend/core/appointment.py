@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 
 from backend.infrastructure.database import Base
 
@@ -17,3 +17,11 @@ class Appointment(Base):
     updated_at = Column(DateTime, nullable=False)
     deleted = Column(Boolean, nullable=False, default=False, index=True)
     deleted_at = Column(DateTime, nullable=True)
+    # F26 — Presence confirmation
+    status = Column(String, nullable=False, default="pending", index=True)
+    confirmation_token = Column(String, nullable=True, unique=True, index=True)
+    confirmed_at = Column(DateTime, nullable=True)
+    # F25 — Reminder tracking
+    reminder_sent_at = Column(DateTime, nullable=True)
+    # F27 — Group appointments
+    group_id = Column(String, nullable=True, index=True)

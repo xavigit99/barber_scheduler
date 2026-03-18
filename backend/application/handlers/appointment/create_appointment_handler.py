@@ -1,3 +1,5 @@
+import os
+import secrets
 from datetime import datetime, timedelta
 
 from diator.requests import RequestHandler
@@ -82,6 +84,7 @@ class CreateAppointmentHandler(RequestHandler[CreateAppointmentCommand, object])
             raise ConflictError("Appointment overlaps an existing booking")
 
         now = datetime.now()
+        token = secrets.token_urlsafe(32)
         appointment = Appointment(
             barber_id=command.barber_id,
             client_id=command.client_id,
@@ -91,6 +94,8 @@ class CreateAppointmentHandler(RequestHandler[CreateAppointmentCommand, object])
             end_at=end_at,
             created_at=now,
             updated_at=now,
+            status="pending",
+            confirmation_token=token,
         )
         self.db.add(appointment)
         self.db.commit()
@@ -121,6 +126,8 @@ class CreateAppointmentHandler(RequestHandler[CreateAppointmentCommand, object])
                     service_name=service.nome,
                     start_at=command.start_at,
                     appointment_id=appointment.id,
+                    confirmation_token=appointment.confirmation_token,
+                    app_base_url=os.getenv("APP_BASE_URL", ""),
                 )
             )
         except Exception:

@@ -241,3 +241,119 @@
 | `repositories/base_repository.py` | Soft-delete + tenant filtering automático |
 | `backend/application/handlers/appointment/` | Lógica core de appointments |
 | `backend/core/scheduling.py` | Cálculo de slots (timezone-aware, 15min) |
+
+  ## F25 — Lembretes Automáticos
+    **Status:** Planeado | **Branch:** `feature/f25-f27-reminders-recurring-group`
+
+    APScheduler job que corre de hora em hora e envia reminder X horas antes do agendamento via email (SMTP) + WhatsApp (CallMeBot). Coluna `reminder_sent_at` na tabela `appointments` para evitar envio duplicado.
+
+    ---
+
+    ## F26 — Confirmação de Presença
+    **Status:** Planeado | **Branch:** `feature/f25-f27-reminders-recurring-group`
+
+    Token único (UUID) gerado no agendamento. Email/WhatsApp enviado com link `/confirm/{token}`. Cliente clica → status muda para `confirmed`. Dashboard mostra confirmados vs pendentes. Token expira após a data do
+    agendamento.
+
+    ---
+
+    ## F27 — Marcações de Grupo
+    **Status:** Planeado | **Branch:** `feature/f25-f27-reminders-recurring-group`
+
+    Tabela `group_appointments` com `max_participants`. Clientes associados via `group_appointment_participants`. Rota pública de booking suporta juntar-se a grupo existente. Bloqueio automático quando lotação máxima
+    atingida.
+
+    ---
+
+    ## F28 — Packs de Sessões
+    **Status:** Planeado
+
+    Entidade `ServicePack` (n sessões, preço total, tenant_id). `PackUsage` regista cada utilização. Decremento automático a cada agendamento. Vista do cliente mostra sessões restantes. Alerta quando pack termina.
+
+    ---
+
+    ## F29 — Pagamentos Online (Stripe)
+    **Status:** Planeado
+
+    Integração Stripe Checkout. Pré-pagamento no momento da marcação pública. Webhook Stripe para confirmar pagamento. Campo `payment_status` no agendamento (`pending`, `paid`, `refunded`). Reembolso automático no
+    cancelamento.
+
+    ---
+
+    ## F30 — Cartão de Fidelização / Pontos
+    **Status:** Planeado
+
+    `LoyaltyAccount` por cliente/tenant. Pontos atribuídos por serviço concluído (configurável). Resgate em desconto na próxima marcação. QR code do cliente para apresentar no balcão.
+
+    ---
+
+    ## F31 — Mensagens de Aniversário
+    **Status:** Planeado
+
+    Campo `data_nascimento` no cliente. Job diário (APScheduler) que verifica aniversários do dia e envia email/WhatsApp com mensagem personalizada + oferta opcional (desconto ou serviço grátis).
+
+    ---
+
+    ## F32 — Segmentação de Clientes
+    **Status:** Planeado
+
+    Filtros avançados na listagem de clientes: inativos há X dias, gasto mínimo, serviço preferido, frequência de visitas. Base para campanhas de marketing segmentadas.
+
+    ---
+
+    ## F33 — Campanhas SMS/Email
+    **Status:** Futuro
+
+    Editor de campanhas. Envio em massa para segmentos. Créditos SMS via Twilio/Vonage. Agendamento de envio. Métricas de abertura e cliques.
+
+    ---
+
+    ## F34 — Faturação Certificada (PT)
+    **Status:** Futuro
+
+    Integração InvoiceXpress ou Moloni. Emissão de faturas com ATCUD, séries, QR code fiscal. Conformidade AT. Envio automático por email ao cliente após pagamento.
+
+    ---
+
+    ## F35 — SAF-T
+    **Status:** Futuro
+
+    Exportação SAF-T-PT conforme Autoridade Tributária. Obrigatório para software de faturação em Portugal. Gerado mensalmente ou a pedido.
+
+    ---
+
+    ## F36 — Gestão de Stocks
+    **Status:** Futuro
+
+    Produtos com stock, stock mínimo, associação produto→serviço. Alerta de reposição. Consumo automático quando serviço é realizado.
+
+    ---
+
+    ## F37 — Gestão de Salas/Recursos
+    **Status:** Futuro
+
+    Recurso (sala, cadeira, equipamento) obrigatório por marcação. Reserva automática. Evita dupla ocupação do mesmo recurso.
+
+    ---
+
+    ## F38 — QR Code de Marcação
+    **Status:** Futuro
+
+    Gerar QR code que aponta para a página pública de booking do negócio. Descarregável em PNG para imprimir e colocar na loja.
+
+    ---
+
+    ## F39 — Widget Embed
+    **Status:** Futuro
+
+    Snippet JS para embutir o formulário de booking no website do cliente. Configurável por tenant_id + tema.
+
+    ---
+
+    ## F40 — Fichas Clínicas
+    **Status:** Futuro (clínicas/fisioterapia)
+
+    Campos de saúde personalizados, alergias, tratamentos anteriores, evolução com fotos. Assinatura digital de consentimentos (RGPD).
+
+    ---
+    O agente principal está a implementar F25-F27 agora. Quando terminar, podes pedir /commit e depois gh pr create.

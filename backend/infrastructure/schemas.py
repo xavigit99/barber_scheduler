@@ -134,6 +134,9 @@ class AppointmentResponse(BaseModel):
     end_at: datetime
     created_at: datetime
     updated_at: datetime
+    status: str = "pending"
+    confirmed_at: datetime | None = None
+    group_id: str | None = None
 
 
 class ClientBase(BaseModel):
@@ -165,6 +168,7 @@ class ServiceBase(BaseModel):
     nome: str
     duracao_minutos: int = Field(gt=0)
     preco: float = Field(ge=0)
+    max_capacity: int = Field(default=1, ge=1)
 
 
 class ServiceCreate(ServiceBase):
@@ -176,6 +180,7 @@ class ServiceUpdate(BaseModel):
     duracao_minutos: int | None = Field(default=None, gt=0)
     preco: float | None = Field(default=None, ge=0)
     tenant_id: int | None = None
+    max_capacity: int | None = Field(default=None, ge=1)
 
 
 class ServiceResponse(ServiceBase):
@@ -371,3 +376,18 @@ class RecurringAppointmentRequest(BaseModel):
     data_inicio: datetime
     recurrence: Literal["weekly", "biweekly"]
     count: int = Field(ge=1, le=12)
+
+
+# ── Group Appointments (F27) ─────────────────────────────────────────────────
+
+
+class GroupAppointmentRequest(BaseModel):
+    barber_id: int
+    service_id: int
+    data_inicio: datetime
+    client_ids: list[int] = Field(min_length=1)
+
+
+class GroupAppointmentResponse(BaseModel):
+    group_id: str
+    created: list[AppointmentResponse]

@@ -1,6 +1,8 @@
 import logging
 import os
+from contextlib import asynccontextmanager
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -25,7 +27,7 @@ from backend.api.routes.stats_routes import router as stats_router
 from backend.api.routes.webhook_routes import router as webhook_router
 from backend.core.logging_config import setup_logging
 from backend.core.notifications import build_notification_service, set_notification_service
-from backend.infrastructure.database import Base, engine
+from backend.infrastructure.database import Base, SessionLocal, engine
 
 # ── Logging ─────────────────────────────────────────────────────────────────
 setup_logging(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -40,8 +42,32 @@ Base.metadata.create_all(bind=engine)
 # ── Rate limiter ─────────────────────────────────────────────────────────────
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 
+
+# ── Scheduler (F25 — Automated Reminders) ────────────────────────────────────
+def _run_reminders() -> None:
+    from backend.core.reminders import send_appointment_reminders
+
+    db = SessionLocal()
+    try:
+        send_appointment_reminders(db)
+    finally:
+        db.close()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    scheduler = AsyncIOScheduler()
+    interval_minutes = int(os.getenv("REMINDER_CHECK_INTERVAL_MINUTES", "30"))
+    scheduler.add_job(_run_reminders, "interval", minutes=interval_minutes)
+    scheduler.start()
+    logger.info("Reminder scheduler started (interval=%dm)", interval_minutes)
+    yield
+    scheduler.shutdown()
+    logger.info("Reminder scheduler stopped")
+
+
 # ── App ───────────────────────────────────────────────────────────────────────
-app = FastAPI(title="Barber Scheduler API")
+app = FastAPI(title="Barber Scheduler API", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

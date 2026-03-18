@@ -11,6 +11,17 @@ logger = logging.getLogger(__name__)
 class WhatsAppService(ABC):
 
     @abstractmethod
+    def notify_client_reminder(
+        self,
+        client_phone: str,
+        client_name: str,
+        barber_name: str,
+        service_name: str,
+        start_at: datetime,
+        appointment_id: int,
+    ) -> None: ...
+
+    @abstractmethod
     def notify_barber_new_appointment(
         self,
         barber_phone: str,
@@ -45,6 +56,12 @@ class WhatsAppService(ABC):
 
 
 class LogWhatsAppService(WhatsAppService):
+
+    def notify_client_reminder(self, client_phone, client_name, barber_name, service_name, start_at, appointment_id):
+        logger.info(
+            "[WhatsApp] Lembrete → %s (%s): %s com %s às %s (id=%s)",
+            client_name, client_phone, service_name, barber_name, start_at, appointment_id,
+        )
 
     def notify_barber_new_appointment(self, barber_phone, barber_name, client_name, service_name, start_at, appointment_id):
         logger.info(
@@ -85,6 +102,12 @@ class CallMeBotWhatsAppService(WhatsAppService):
         url = f"{self._BASE_URL}?{params}"
         with urllib.request.urlopen(url, timeout=10) as resp:  # noqa: S310
             resp.read()
+
+    def notify_client_reminder(self, client_phone, client_name, barber_name, service_name, start_at, appointment_id):
+        self._send(
+            client_phone,
+            f"Olá {client_name}, lembrete: {service_name} com {barber_name} amanhã às {start_at.strftime('%H:%M')} ({start_at.strftime('%d/%m/%Y')}).",
+        )
 
     def notify_barber_new_appointment(self, barber_phone, barber_name, client_name, service_name, start_at, appointment_id):
         self._send(

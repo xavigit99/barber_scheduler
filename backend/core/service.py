@@ -13,3 +13,5 @@ class Service(Base):
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
     deleted = Column(Boolean, nullable=False, default=False, index=True)
     deleted_at = Column(DateTime, nullable=True)
+    # F27 — Group/class capacity (default 1 = individual session)
+    max_capacity = Column(Integer, nullable=False, default=1)

@@ -1,7 +1,11 @@
 from datetime import date
 
 from backend.application.commands.cancel_appointment_command import CancelAppointmentCommand
+from backend.application.commands.confirm_appointment_command import ConfirmAppointmentCommand
 from backend.application.commands.create_appointment_command import CreateAppointmentCommand
+from backend.application.commands.create_group_appointment_command import (
+    CreateGroupAppointmentCommand,
+)
 from backend.application.commands.create_recurring_appointment_command import (
     CreateRecurringAppointmentCommand,
 )
@@ -18,6 +22,7 @@ from backend.application.queries.list_client_appointments_query import (
 from backend.infrastructure.schemas import (
     AppointmentCreateRequest,
     AppointmentRescheduleRequest,
+    GroupAppointmentRequest,
     RecurringAppointmentRequest,
 )
 
@@ -87,6 +92,23 @@ def build_create_recurring_appointment_command(
         start_at=payload.data_inicio,
         recurrence=payload.recurrence,
         count=payload.count,
+        tenant_id=tenant_id,
+    )
+
+
+def build_confirm_appointment_command(token: str) -> ConfirmAppointmentCommand:
+    return ConfirmAppointmentCommand(token=token)
+
+
+def build_create_group_appointment_command(
+    payload: GroupAppointmentRequest,
+    tenant_id: int | None = None,
+) -> CreateGroupAppointmentCommand:
+    return CreateGroupAppointmentCommand(
+        barber_id=payload.barber_id,
+        service_id=payload.service_id,
+        start_at=payload.data_inicio,
+        client_ids=payload.client_ids,
         tenant_id=tenant_id,
     )
 

@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 
 from backend.api.appointment_http import (
     build_cancel_appointment_command,
+    build_confirm_appointment_command,
     build_create_appointment_command,
+    build_create_group_appointment_command,
     build_create_recurring_appointment_command,
     build_get_appointment_query,
     build_list_barber_appointments_query,
@@ -25,6 +27,8 @@ from backend.infrastructure.schemas import (
     AppointmentCreateRequest,
     AppointmentRescheduleRequest,
     AppointmentResponse,
+    GroupAppointmentRequest,
+    GroupAppointmentResponse,
     RecurringAppointmentRequest,
 )
 from meditor import build_mediator
@@ -238,6 +242,38 @@ async def create_recurring_appointment(
         ],
         "skipped_count": result["skipped_count"],
     }
+
+
+@router.get("/confirm/{token}", response_model=AppointmentResponse, tags=["Public"])
+async def confirm_appointment(
+    token: str,
+    db: Session = Depends(get_db),
+):
+    """Public endpoint — client clicks link from confirmation email to confirm presence."""
+    mediator = build_mediator(db)
+    try:
+        return await mediator.send(build_confirm_appointment_command(token))
+    except (NotFoundError,) as exc:
+        raise to_http_exception(exc) from exc
+
+
+@router.post("/group", response_model=GroupAppointmentResponse, status_code=status.HTTP_201_CREATED)
+async def create_group_appointment(
+    payload: GroupAppointmentRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles(ADMIN_ROLE, BARBER_ROLE)),
+    tenant_id: int | None = Header(None, alias=TENANT_HEADER_ALIAS),
+):
+    """Create a group appointment (multiple clients, same slot). Service must have max_capacity > 1."""
+    mediator = build_mediator(db)
+    try:
+        result = await mediator.send(build_create_group_appointment_command(payload, tenant_id))
+    except (ConflictError, NotFoundError, ValidationError) as exc:
+        raise to_http_exception(exc) from exc
+    return GroupAppointmentResponse(
+        group_id=result["group_id"],
+        created=[AppointmentResponse.model_validate(a) for a in result["created"]],
+    )
 
 
 @router.get("/{appointment_id}", response_model=AppointmentResponse)
