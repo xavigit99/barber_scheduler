@@ -37,6 +37,15 @@ class NotificationService(ABC):
     @abstractmethod
     def send_birthday(self, client_name: str, client_email: str) -> None: ...
 
+    @abstractmethod
+    def send_campaign(
+        self,
+        client_name: str,
+        client_email: str,
+        subject: str,
+        body: str,
+    ) -> None: ...
+
 
 class LogNotificationService(NotificationService):
     """Log-based implementation — replace with real email/SMS in production."""
@@ -92,6 +101,22 @@ class LogNotificationService(NotificationService):
         logger.info(
             "Birthday message",
             extra={"event": "client.birthday", "client_email": client_email},
+        )
+
+    def send_campaign(
+        self,
+        client_name: str,
+        client_email: str,
+        subject: str,
+        body: str,
+    ) -> None:
+        logger.info(
+            "Campaign email",
+            extra={
+                "event": "campaign.sent",
+                "client_email": client_email,
+                "subject": subject,
+            },
         )
 
 
@@ -194,6 +219,15 @@ class SmtpNotificationService(NotificationService):
                 f"A equipa\n"
             ),
         )
+
+    def send_campaign(
+        self,
+        client_name: str,
+        client_email: str,
+        subject: str,
+        body: str,
+    ) -> None:
+        self._send(to=client_email, subject=subject, body=body)
 
 
 def build_notification_service() -> NotificationService:

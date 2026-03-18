@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Header, Response, status
+from fastapi import APIRouter, Depends, Header, Query, Response, status
 from sqlalchemy.orm import Session
 
 from backend.api.auth_dependencies import require_roles
@@ -13,6 +13,7 @@ from backend.api.client_http import (
     ensure_update_payload_has_changes,
 )
 from backend.api.tenant_header import TENANT_HEADER_ALIAS, require_tenant_id
+from backend.application.queries.get_client_segment_query import GetClientSegmentQuery
 from backend.core.client import Client
 from backend.core.roles import ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE
 from backend.infrastructure.database import get_db
@@ -60,6 +61,29 @@ async def list_clients(
     mediator = build_mediator(db)
     tenant_id = require_tenant_id(tenant_id)
     return await mediator.send(build_list_clients_query(tenant_id))
+
+
+@router.get("/segment", response_model=list[ClientResponse])
+async def get_client_segment(
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles(ADMIN_ROLE)),
+    tenant_id: int | None = Header(None, alias=TENANT_HEADER_ALIAS),
+    inactive_days: int | None = Query(None, description="Clients with no appointment in last N days"),
+    min_spend: float | None = Query(None, description="Clients with total spend >= value"),
+    service_id: int | None = Query(None, description="Clients who used this service"),
+    has_birthday_this_month: bool | None = Query(None, description="Clients with birthday this month"),
+):
+    mediator = build_mediator(db)
+    tid = require_tenant_id(tenant_id)
+    return await mediator.send(
+        GetClientSegmentQuery(
+            tenant_id=tid,
+            inactive_days=inactive_days,
+            min_spend=min_spend,
+            service_id=service_id,
+            has_birthday_this_month=has_birthday_this_month,
+        )
+    )
 
 
 @router.get("/{client_id}", response_model=ClientResponse)

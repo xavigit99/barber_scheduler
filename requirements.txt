@@ -7,3 +7,5 @@ pydantic[email]
 pydantic-settings
 alembic
 apscheduler
+stripe
+httpx

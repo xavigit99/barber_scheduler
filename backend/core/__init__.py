@@ -4,8 +4,10 @@ from backend.core.barber_availability import BarberAvailability
 from backend.core.barber_block import BarberBlock
 from backend.core.barbershop import Barbershop
 from backend.core.barbershop_membership import BarbershopMembership
+from backend.core.campaign import Campaign
 from backend.core.client import Client
 from backend.core.feedback import Feedback
+from backend.core.invoice import Invoice
 from backend.core.loyalty import LoyaltyAccount, LoyaltyTransaction
 from backend.core.membership_roles import (
     ALLOWED_MEMBERSHIP_ROLES,
@@ -53,4 +55,6 @@ __all__ = [
     "User",
     "Webhook",
     "ALLOWED_BLOCK_KINDS",
+    "Campaign",
+    "Invoice",
 ]

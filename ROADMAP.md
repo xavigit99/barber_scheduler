@@ -3,7 +3,7 @@
 > Sistema de gestão de barbearias construído em FastAPI + SQLAlchemy com arquitetura CQRS via Mediator (`diator`).
 > Suporte a múltiplos perfis (`admin`, `barbeiro`, `cliente`) com multi-tenant foundation.
 >
-> **Última atualização:** 18 de março de 2026
+> **Última atualização:** 18 de março de 2026 · branch `feature/f32-f35-segmentation-campaigns-payments-invoicing`
 
 ---
 
@@ -20,8 +20,8 @@
 | F21–F22 | Email SMTP + Docker Produção | ✅ Completo | PR #29 |
 | F23–F24 | Webhooks + Marcações Recorrentes | ✅ Completo | PR #30 |
 | F25–F27 | Lembretes + Confirmação + Grupo | ✅ Completo | PR #32 |
-| F28–F31 | Packs + Fidelização + Aniversários | 🔄 Em curso | `feature/f28-f31-packs-loyalty-birthday` |
-| F32–F35 | Segmentação + Campanhas + Faturação | ⬜ Planeado | — |
+| F28–F31 | Packs + Fidelização + Aniversários | ✅ Completo | PR #33 |
+| F32–F35 | Segmentação + Campanhas + Pagamentos + Faturação | 🔄 Em curso | `feature/f32-f35-segmentation-campaigns-payments-invoicing` |
 | F36–F41 | Stocks + Salas + QR + Widget + Clínicas | ⬜ Futuro | — |
 
 ---
@@ -117,47 +117,34 @@
 - **F27 Marcações de grupo:** `service.max_capacity` para slots partilhados; `POST /appointments/group` com lista de `client_ids`; `group_id` liga as marcações; validação de capacidade
 - Migração Alembic `b2c3d4e5f6a7`
 
+### F28–F31 — Packs + Fidelização + Aniversários ✅ (PR #33)
+- **F28 Packs de sessões:** `ServicePack` (nome, n_sessoes, preco) + `ClientPack` (sessoes_restantes, expira_em). Endpoints `/packs/services` e `/packs/me`. Migração `c3d4e5f6a7b8`
+- **F30 Cartão de fidelização:** `LoyaltyAccount` + `LoyaltyTransaction`. 1 ponto por minuto de serviço na criação de agendamento. `/loyalty/me` + `/loyalty/redeem`
+- **F31 Aniversários:** `data_nascimento` no cliente. Cron diário 09:00 envia email + WhatsApp. `birthday_msg_year` previne duplicados
+
 ---
 
 ## Em Curso
 
-### F28 — Packs de Sessões 🔄
-**Branch:** `feature/f28-f31-packs-loyalty-birthday`
+### F32 — Segmentação de Clientes 🔄
+**Branch:** `feature/f32-f35-segmentation-campaigns-payments-invoicing`
 
-`ServicePack` (nome, service_id, n_sessoes, preco, tenant_id). `ClientPack` regista a compra por cliente (sessoes_restantes, comprado_em, expira_em). Decremento automático ao criar agendamento quando cliente tem pack ativo para aquele serviço. `GET /packs/me` para o cliente ver os seus packs.
+`GET /clients/segment` (admin). Filtros: `inactive_days`, `min_spend`, `service_id`, `has_birthday_this_month`. Retorna lista de clientes. Base para campanhas segmentadas.
 
-**Endpoints:**
-- `POST /service-packs` — criar pack (admin)
-- `GET /service-packs` — listar packs do tenant
-- `POST /client-packs` — comprar pack (admin/client)
-- `GET /client-packs/me` — packs do cliente autenticado
-- `GET /client-packs/{id}` — detalhe de um pack
+### F33 — Campanhas de Email 🔄
+**Branch:** `feature/f32-f35-segmentation-campaigns-payments-invoicing`
 
-### F30 — Cartão de Fidelização 🔄
-**Branch:** `feature/f28-f31-packs-loyalty-birthday`
+Modelo `Campaign` (nome, subject, body_template, segment_filters JSON, status draft/sent). `POST /campaigns/{id}/send` aplica filtros de segmentação e envia email a cada cliente correspondente. `NotificationService.send_campaign()` adicionado.
 
-`LoyaltyAccount` por cliente/tenant com `pontos_total` e `pontos_disponiveis`. `LoyaltyTransaction` regista ganhos (por serviço) e resgates. Pontos ganhos = `duracao_minutos` do serviço. `GET /loyalty/me` para o cliente. `POST /loyalty/redeem` para resgatar pontos em desconto.
+### F34 — Pagamentos Online (Stripe) 🔄
+**Branch:** `feature/f32-f35-segmentation-campaigns-payments-invoicing`
 
-### F31 — Mensagens de Aniversário 🔄
-**Branch:** `feature/f28-f31-packs-loyalty-birthday`
+`payment_status` em `Appointment` (not_required/pending/paid/refunded). `POST /payments/checkout` cria Stripe Checkout Session. `POST /payments/webhook` valida assinatura e marca `paid`. Graceful degradation se `STRIPE_SECRET_KEY` não estiver definido (HTTP 503).
 
-Campo `data_nascimento` (Date, nullable) no modelo `Client`. APScheduler job diário às 09:00 verifica clientes com aniversário hoje (dia + mês). Envia email + WhatsApp personalizado. `birthday_msg_year` previne envio duplo no mesmo ano.
+### F35 — Faturação Certificada (InvoiceXpress) 🔄
+**Branch:** `feature/f32-f35-segmentation-campaigns-payments-invoicing`
 
----
-
-## Planeado
-
-### F32 — Segmentação de Clientes ⬜
-Filtros avançados: inativos há X dias, gasto mínimo, serviço preferido, frequência de visitas. Base para campanhas de marketing segmentadas.
-
-### F33 — Campanhas SMS/Email ⬜
-Editor de campanhas. Envio em massa para segmentos. Créditos SMS via Twilio/Vonage. Agendamento de envio.
-
-### F34 — Pagamentos Online (Stripe) ⬜
-Integração Stripe Checkout. Pré-pagamento no booking público. Webhook Stripe. Campo `payment_status` (pending/paid/refunded). Reembolso automático no cancelamento.
-
-### F35 — Faturação Certificada (PT) ⬜
-Integração InvoiceXpress ou Moloni. Faturas com ATCUD, séries, QR code fiscal. Conformidade AT. Envio automático por email.
+Modelo `Invoice` (appointment_id, invoice_number, invoice_url, status draft/sent). `POST /invoices` emite via InvoiceXpress API se env vars configuradas, senão cria draft local. `GET /invoices` e `GET /invoices/{id}`.
 
 ---
 
