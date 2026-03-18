@@ -1,8 +1,7 @@
 from datetime import date, datetime, time
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
-
-from backend.core.roles import ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE
 
 
 class BarberBase(BaseModel):
