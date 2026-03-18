@@ -18,6 +18,16 @@ const adminLinks: NavItem[] = [
   { to: '/admin/compliance', label: 'Compliance', requiresTenant: true },
   { to: '/admin/webhooks', label: 'Webhooks', requiresTenant: true },
   { to: '/admin/feedback', label: 'Avaliações', requiresTenant: true },
+  { to: '/admin/packs', label: 'Packs', requiresTenant: true },
+  { to: '/admin/loyalty', label: 'Fidelização', requiresTenant: true },
+  { to: '/admin/campaigns', label: 'Campanhas', requiresTenant: true },
+  { to: '/admin/payments', label: 'Pagamentos', requiresTenant: true },
+  { to: '/admin/invoices', label: 'Faturas', requiresTenant: true },
+  { to: '/admin/stocks', label: 'Stocks', requiresTenant: true },
+  { to: '/admin/resources', label: 'Recursos', requiresTenant: true },
+  { to: '/admin/clinical', label: 'Fichas Clínicas', requiresTenant: true },
+  { to: '/admin/saft', label: 'SAF-T', requiresTenant: true },
+  { to: '/admin/clients/segment', label: 'Segmentação', requiresTenant: true },
 ];
 
 const barberLinks: NavItem[] = [
@@ -31,6 +41,8 @@ const clientLinks: NavItem[] = [
   { to: '/client/appointments', label: 'Meus Agendamentos' },
   { to: '/client/feedback', label: 'Minhas Avaliações' },
   { to: '/client/profile', label: 'O meu perfil' },
+  { to: '/client/packs', label: 'Os Meus Packs' },
+  { to: '/client/loyalty', label: 'Fidelização' },
 ];
 
 export default function Navbar() {
