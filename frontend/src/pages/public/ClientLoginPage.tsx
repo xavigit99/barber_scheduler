@@ -5,7 +5,7 @@ import { useToast } from '../../components/Toast';
 
 export default function ClientLoginPage() {
   const { tenantId } = useParams<{ tenantId: string }>();
-  const { login } = useAuth();
+  const { login, selectTenant } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -17,6 +17,9 @@ export default function ClientLoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      if (tenantId) {
+        selectTenant(tenantId);
+      }
       await login(username, password);
       navigate('/client', { replace: true });
     } catch {
@@ -41,7 +44,9 @@ export default function ClientLoginPage() {
         </div>
 
         <h1 className="text-2xl font-bold text-white mb-1">Bem-vindo de volta</h1>
-        <p className="text-sm text-slate-400 mb-8">Entra para gerir os teus agendamentos.</p>
+        <p className="text-sm text-slate-400 mb-8">
+          Entra para gerir os teus agendamentos nesta barbearia.
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex flex-col gap-1.5">
@@ -82,7 +87,7 @@ export default function ClientLoginPage() {
           <p className="text-sm text-slate-400">
             Não tens conta?{' '}
             <Link to={`/join/${tenantId}`} className="text-amber-400 font-medium hover:text-amber-300">
-              Criar conta
+              Criar conta nesta barbearia
             </Link>
           </p>
           <p className="text-sm text-slate-400">

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from backend.application.commands.create_feedback_command import CreateFeedbackCommand
 from backend.core.appointment import Appointment
-from backend.core.client import Client
+from backend.core.client_profiles import get_client_profile_for_user
 from backend.core.exceptions import ConflictError, ForbiddenError, NotFoundError, ValidationError
 from backend.core.feedback import Feedback
 from repositories.base_repository import BaseRepository
@@ -26,10 +26,10 @@ class CreateFeedbackHandler(RequestHandler[CreateFeedbackCommand, object]):
         if appointment is None:
             raise NotFoundError("Appointment not found")
 
-        client = (
-            self.db.query(Client)
-            .filter(Client.user_id == command.user_id, Client.deleted.is_(False))
-            .first()
+        client = get_client_profile_for_user(
+            self.db,
+            user_id=command.user_id,
+            tenant_id=appointment.tenant_id,
         )
         if client is None:
             raise NotFoundError("Client not found")

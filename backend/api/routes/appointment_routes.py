@@ -20,6 +20,10 @@ from backend.api.error_http import to_http_exception
 from backend.api.tenant_header import TENANT_HEADER_ALIAS
 from backend.core.barber import Barber
 from backend.core.client import Client
+from backend.core.client_profiles import (
+    get_client_profile_for_user,
+    get_or_create_client_profile_for_user,
+)
 from backend.core.exceptions import ConflictError, NotFoundError, ValidationError
 from backend.core.roles import ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE
 from backend.infrastructure.database import get_db
@@ -106,10 +110,15 @@ async def create_appointment(
     user_id = _get_user_id(current_user)
     role = _get_user_role(current_user)
     if role == CLIENT_ROLE:
-        own_client = (
-            db.query(Client)
-            .filter(Client.user_id == user_id, Client.deleted.is_(False))
-            .first()
+        if tenant_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Tenant context is required",
+            )
+        own_client = get_or_create_client_profile_for_user(
+            db,
+            user_id=user_id,
+            tenant_id=tenant_id,
         )
         if own_client is None or own_client.id != payload.client_id:
             raise HTTPException(
@@ -205,14 +214,7 @@ async def list_my_appointments(
     user_id = _get_user_id(current_user)
 
     # Look up the client entity linked to this user
-    client = (
-        db.query(Client)
-        .filter(
-            Client.user_id == user_id,
-            Client.deleted.is_(False),
-        )
-        .first()
-    )
+    client = get_client_profile_for_user(db, user_id=user_id, tenant_id=tenant_id)
     if client is None:
         return []
 

@@ -112,6 +112,15 @@ class AvailableSlotsResponse(BaseModel):
     slots: list[AvailableSlotResponse]
 
 
+class AvailableDatesResponse(BaseModel):
+    barber_id: int
+    service_id: int
+    start_date: date
+    end_date: date
+    timezone: str
+    dates: list[date]
+
+
 class AppointmentCreateRequest(BaseModel):
     barber_id: int
     client_id: int
@@ -216,7 +225,6 @@ class ClientRegisterRequest(BaseModel):
     email: str
     password: str = Field(min_length=8)
     nome: str
-    tenant_id: int
 
 
 class BarberRegisterRequest(BaseModel):

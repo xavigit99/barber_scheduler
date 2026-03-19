@@ -7,6 +7,7 @@ from backend.api.error_http import to_http_exception
 from backend.application.commands.public_create_appointment_command import (
     PublicCreateAppointmentCommand,
 )
+from backend.application.queries.get_available_dates_query import GetAvailableDatesQuery
 from backend.application.queries.get_available_slots_query import GetAvailableSlotsQuery
 from backend.application.queries.list_barbers_query import ListBarbersQuery
 from backend.application.queries.list_barbershops_query import ListBarbershopsQuery
@@ -16,6 +17,7 @@ from backend.core.exceptions import NotFoundError
 from backend.core.service import Service
 from backend.infrastructure.database import get_db
 from backend.infrastructure.schemas import (
+    AvailableDatesResponse,
     BarberResponse,
     BarbershopResponse,
     PublicAppointmentCreateRequest,
@@ -81,6 +83,41 @@ async def public_get_slots_v2(
                 barber_id=barber_id,
                 service_id=service_id,
                 target_date=target_date,
+                timezone=timezone,
+            )
+        )
+    except Exception as exc:
+        raise to_http_exception(exc) from exc
+
+
+@router.get(
+    "/tenants/{tenant_id}/barbers/{barber_id}/available-dates",
+    response_model=AvailableDatesResponse,
+)
+async def public_get_available_dates(
+    tenant_id: int,
+    barber_id: int,
+    service_id: int,
+    start_date: date,
+    end_date: date,
+    timezone: str = "Europe/Lisbon",
+    db: Session = Depends(get_db),
+):
+    barber = BaseRepository(Barber, db).get(barber_id)
+    if barber is None or barber.tenant_id != tenant_id:
+        raise to_http_exception(NotFoundError("Barber not found"))
+    service = BaseRepository(Service, db).get(service_id)
+    if service is None or service.tenant_id != tenant_id:
+        raise to_http_exception(NotFoundError("Service not found"))
+
+    mediator = build_mediator(db)
+    try:
+        return await mediator.send(
+            GetAvailableDatesQuery(
+                barber_id=barber_id,
+                service_id=service_id,
+                start_date=start_date,
+                end_date=end_date,
                 timezone=timezone,
             )
         )

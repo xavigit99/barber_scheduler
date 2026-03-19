@@ -13,6 +13,7 @@ from backend.application.commands.update_barber_availability_command import (
     UpdateBarberAvailabilityCommand,
 )
 from backend.application.queries.get_available_slots_query import GetAvailableSlotsQuery
+from backend.application.queries.get_available_dates_query import GetAvailableDatesQuery
 from backend.application.queries.list_barber_availabilities_query import (
     ListBarberAvailabilitiesQuery,
 )
@@ -124,6 +125,22 @@ def build_get_available_slots_query(
         barber_id=barber_id,
         service_id=service_id,
         target_date=target_date,
+        timezone=timezone,
+    )
+
+
+def build_get_available_dates_query(
+    barber_id: int,
+    service_id: int,
+    start_date: date,
+    end_date: date,
+    timezone: str,
+) -> GetAvailableDatesQuery:
+    return GetAvailableDatesQuery(
+        barber_id=barber_id,
+        service_id=service_id,
+        start_date=start_date,
+        end_date=end_date,
         timezone=timezone,
     )
 

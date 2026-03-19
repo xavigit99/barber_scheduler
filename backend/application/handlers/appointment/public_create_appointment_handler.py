@@ -15,6 +15,7 @@ from backend.core.exceptions import ConflictError, NotFoundError, ValidationErro
 from backend.core.notifications import AppointmentNotification, get_notification_service
 from backend.core.scheduling import build_daily_slots
 from backend.core.service import Service
+from backend.core.user import User
 from repositories.base_repository import BaseRepository
 
 
@@ -36,7 +37,12 @@ class PublicCreateAppointmentHandler(RequestHandler[PublicCreateAppointmentComma
         if not service:
             raise NotFoundError(f"Service {command.service_id} not found")
 
-        # Find or create client by email within tenant
+        # Find or create the tenant-scoped client profile.
+        linked_user = (
+            self.db.query(User)
+            .filter(User.email == command.client_email)
+            .first()
+        )
         existing = (
             self.db.query(Client)
             .filter(
@@ -54,6 +60,7 @@ class PublicCreateAppointmentHandler(RequestHandler[PublicCreateAppointmentComma
                 "email": command.client_email,
                 "telefone": command.client_phone,
                 "tenant_id": command.tenant_id,
+                "user_id": linked_user.id if linked_user is not None else None,
             })
 
         # Validate slot availability

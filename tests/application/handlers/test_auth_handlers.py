@@ -8,11 +8,13 @@ from backend.application.commands.authenticate_user_command import AuthenticateU
 from backend.application.commands.bootstrap_admin_command import BootstrapAdminCommand
 from backend.application.commands.create_user_command import CreateUserCommand
 from backend.application.commands.register_barber_command import RegisterBarberCommand
+from backend.application.commands.register_client_command import RegisterClientCommand
 from backend.application.handlers.auth.authenticate_user_handler import AuthenticateUserHandler
 from backend.application.handlers.auth.bootstrap_admin_handler import BootstrapAdminHandler
 from backend.application.handlers.auth.create_user_handler import CreateUserHandler
 from backend.application.handlers.auth.get_user_handler import GetUserHandler
 from backend.application.handlers.auth.register_barber_handler import RegisterBarberHandler
+from backend.application.handlers.auth.register_client_handler import RegisterClientHandler
 from backend.application.queries.get_user_query import GetUserQuery
 from backend.core.barber import Barber
 from backend.core.exceptions import AuthenticationError, ConflictError
@@ -235,6 +237,64 @@ class AuthHandlersTestCase(unittest.IsolatedAsyncioTestCase):
                     tenant_id=1,
                 )
             )
+
+    async def test_register_client_handler_creates_global_client_user_without_client_row(self):
+        db = MagicMock()
+        query_builder = MagicMock()
+        db.query.return_value = query_builder
+        query_builder.filter.return_value = query_builder
+        query_builder.first.return_value = None
+
+        added_objects = []
+        db.add.side_effect = lambda obj: added_objects.append(obj)
+
+        handler = RegisterClientHandler(db)
+        command = RegisterClientCommand(
+            username="client1",
+            email="client1@example.com",
+            password="password123",
+            nome="Cliente Um",
+        )
+
+        result = await handler.handle(command)
+
+        self.assertIsInstance(result, User)
+        self.assertEqual(result.username, "client1")
+        self.assertEqual(result.role, "client")
+        self.assertEqual(len(added_objects), 1)
+        self.assertIsInstance(added_objects[0], User)
+        db.commit.assert_called_once_with()
+        db.refresh.assert_called_once_with(result)
+
+    async def test_register_client_handler_adds_client_role_to_existing_user(self):
+        db = MagicMock()
+        query_builder = MagicMock()
+        existing_user = User(
+            id=7,
+            username="staff1",
+            email="staff1@example.com",
+            password_hash=hash_password("password123"),
+            role="barber",
+        )
+        db.query.return_value = query_builder
+        query_builder.filter.return_value = query_builder
+        query_builder.first.return_value = existing_user
+
+        handler = RegisterClientHandler(db)
+
+        result = await handler.handle(
+            RegisterClientCommand(
+                username="staff1",
+                email="staff1@example.com",
+                password="password123",
+                nome="Staff Um",
+            )
+        )
+
+        self.assertIs(result, existing_user)
+        self.assertEqual(result.role, "barber,client")
+        db.commit.assert_called_once_with()
+        db.refresh.assert_called_once_with(result)
 
 
 if __name__ == "__main__":

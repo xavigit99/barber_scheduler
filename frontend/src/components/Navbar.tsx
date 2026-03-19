@@ -37,6 +37,7 @@ const barberLinks: NavItem[] = [
 ];
 
 const clientLinks: NavItem[] = [
+  { to: '/barbershops', label: 'Mudar Barbearia' },
   { to: '/client', label: 'Agendar' },
   { to: '/client/appointments', label: 'Meus Agendamentos' },
   { to: '/client/feedback', label: 'Minhas Avaliações' },

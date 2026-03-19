@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import api, { getApiError } from '../../lib/api';
+import ClientEmptyState from '../../components/ClientEmptyState';
+import ClientPageHeader from '../../components/ClientPageHeader';
 import Spinner from '../../components/Spinner';
 import { useToast } from '../../components/Toast';
+import { useAuth } from '../../contexts/AuthContext';
 import type { Feedback } from '../../types';
 
 function StarDisplay({ rating }: { rating: number }) {
@@ -16,12 +18,21 @@ function StarDisplay({ rating }: { rating: number }) {
 
 export default function MyFeedbackPage() {
   const { toast } = useToast();
+  const { tenantId } = useAuth();
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [barbers, setBarbers] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!tenantId) {
+      setFeedback([]);
+      setBarbers({});
+      setLoading(false);
+      return;
+    }
+
     async function load() {
+      setLoading(true);
       try {
         const [fRes, bRes] = await Promise.all([
           api.get('/feedback/me'),
@@ -40,30 +51,39 @@ export default function MyFeedbackPage() {
       }
     }
     load();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return <Spinner />;
 
+  if (!tenantId) {
+    return (
+      <ClientEmptyState
+        message="Escolhe primeiro a barbearia onde queres consultar as tuas avaliacoes."
+        linkTo="/barbershops"
+        linkLabel="Ver barbearias"
+      />
+    );
+  }
+
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-slate-800">Minhas Avaliações</h1>
+      <ClientPageHeader
+        title="Minhas Avaliações"
+        description="Revê os comentários e classificações que já deixaste aos teus atendimentos."
+      />
 
       {feedback.length === 0 ? (
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-8 text-center">
-          <p className="text-slate-500 mb-4">Ainda não tens avaliações.</p>
-          <Link
-            to="/client/appointments"
-            className="inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700 transition-colors"
-          >
-            Ver os meus agendamentos
-          </Link>
-        </div>
+        <ClientEmptyState
+          message="Ainda não tens avaliações."
+          linkTo="/client/appointments"
+          linkLabel="Ver os meus agendamentos"
+        />
       ) : (
         <div className="space-y-3">
           {feedback.map((f) => (
             <div
               key={f.id}
-              className="rounded-lg border border-slate-200 bg-white p-4 space-y-2"
+              className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3 shadow-sm"
             >
               <div className="flex items-center justify-between">
                 <StarDisplay rating={f.rating} />
@@ -75,7 +95,7 @@ export default function MyFeedbackPage() {
                 Barbeiro: <span className="font-medium text-slate-700">{barbers[String(f.barber_id)] ?? `#${f.barber_id}`}</span>
               </div>
               {f.comentario && (
-                <p className="text-sm text-slate-700 italic">"{f.comentario}"</p>
+                <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700 italic">"{f.comentario}"</p>
               )}
             </div>
           ))}

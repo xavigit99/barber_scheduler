@@ -16,6 +16,10 @@ ALLOWED_BLOCK_KINDS = {
 SLOT_INTERVAL_MINUTES = 15
 
 
+def app_weekday_from_python(weekday: int) -> int:
+    return (weekday + 1) % 7
+
+
 def validate_weekday(weekday: int) -> None:
     if weekday < 0 or weekday > 6:
         raise ValidationError("weekday must be between 0 and 6")
@@ -96,14 +100,21 @@ def build_daily_slots(
     availability_windows: list,
     blocks: list,
     service_duration_minutes: int,
+    earliest_start_at: datetime | None = None,
 ) -> list[dict]:
     timezone = ensure_valid_timezone(timezone_name)
     slot_duration = timedelta(minutes=service_duration_minutes)
     slot_interval = timedelta(minutes=SLOT_INTERVAL_MINUTES)
     slots: list[dict] = []
+    earliest_local = (
+        normalize_local_datetime(earliest_start_at, timezone)
+        if earliest_start_at is not None
+        else None
+    )
+    target_weekday = app_weekday_from_python(target_date.weekday())
 
     for availability in availability_windows:
-        if availability.weekday != target_date.weekday():
+        if availability.weekday != target_weekday:
             continue
 
         window_start = datetime.combine(target_date, availability.start_time, tzinfo=timezone)
@@ -113,6 +124,10 @@ def build_daily_slots(
         while cursor + slot_duration <= window_end:
             candidate_end = cursor + slot_duration
             overlaps_block = False
+
+            if earliest_local is not None and cursor <= earliest_local:
+                cursor += slot_interval
+                continue
 
             for block in blocks:
                 block_start = normalize_local_datetime(block.start_at, timezone)

@@ -1,10 +1,13 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import api, { getApiError } from '../../lib/api';
 import Button from '../../components/Button';
+import ClientEmptyState from '../../components/ClientEmptyState';
+import ClientPageHeader from '../../components/ClientPageHeader';
 import Modal from '../../components/Modal';
 import Input from '../../components/Input';
 import Spinner from '../../components/Spinner';
 import { useToast } from '../../components/Toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface LoyaltyAccount {
   pontos_total: number;
@@ -13,6 +16,7 @@ interface LoyaltyAccount {
 
 export default function MyLoyaltyPage() {
   const { toast } = useToast();
+  const { tenantId } = useAuth();
   const [account, setAccount] = useState<LoyaltyAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -30,8 +34,13 @@ export default function MyLoyaltyPage() {
   }
 
   useEffect(() => {
+    if (!tenantId) {
+      setAccount(null);
+      setLoading(false);
+      return;
+    }
     load();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleRedeem(e: FormEvent) {
     e.preventDefault();
@@ -50,17 +59,30 @@ export default function MyLoyaltyPage() {
 
   if (loading) return <Spinner />;
 
+  if (!tenantId) {
+    return (
+      <ClientEmptyState
+        message="Escolhe primeiro a barbearia onde queres consultar a tua fidelizacao."
+        linkTo="/barbershops"
+        linkLabel="Ver barbearias"
+      />
+    );
+  }
+
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-slate-800">Fidelizacao</h1>
+      <ClientPageHeader
+        title="Fidelização"
+        description="Vê os teus pontos acumulados e resgata saldo disponível quando quiseres."
+      />
 
-      <div className="rounded-xl bg-white p-8 shadow-sm border border-slate-200 max-w-md">
+      <div className="max-w-3xl rounded-2xl bg-white p-8 shadow-sm border border-slate-200">
         <div className="grid grid-cols-2 gap-6 mb-6">
-          <div className="text-center">
+          <div className="rounded-2xl bg-slate-50 p-5 text-center">
             <p className="text-4xl font-bold text-slate-800">{account?.pontos_total ?? 0}</p>
             <p className="text-sm text-slate-500 mt-1">Pontos Total</p>
           </div>
-          <div className="text-center">
+          <div className="rounded-2xl bg-emerald-50 p-5 text-center">
             <p className="text-4xl font-bold text-emerald-600">{account?.pontos_disponiveis ?? 0}</p>
             <p className="text-sm text-slate-500 mt-1">Pontos Disponiveis</p>
           </div>

@@ -1,5 +1,6 @@
 from backend.application.queries.get_appointment_query import GetAppointmentQuery
 from backend.application.queries.get_available_slots_query import GetAvailableSlotsQuery
+from backend.application.queries.get_available_dates_query import GetAvailableDatesQuery
 from backend.application.queries.get_barber_query import GetBarberQuery
 from backend.application.queries.get_barbershop_query import GetBarbershopQuery
 from backend.application.queries.get_client_query import GetClientQuery
@@ -22,6 +23,7 @@ from backend.application.queries.list_services_query import ListServicesQuery
 
 __all__ = [
     "GetAvailableSlotsQuery",
+    "GetAvailableDatesQuery",
     "GetAppointmentQuery",
     "GetBarbershopQuery",
     "GetBarberQuery",

@@ -6,7 +6,7 @@ from backend.api.error_http import to_http_exception
 from backend.api.tenant_header import TENANT_HEADER_ALIAS
 from backend.application.commands.redeem_loyalty_command import RedeemLoyaltyCommand
 from backend.application.queries.get_loyalty_account_query import GetLoyaltyAccountQuery
-from backend.core.client import Client
+from backend.core.client_profiles import get_client_profile_for_user
 from backend.core.exceptions import ConflictError, NotFoundError
 from backend.core.roles import ADMIN_ROLE, CLIENT_ROLE
 from backend.infrastructure.database import get_db
@@ -32,11 +32,7 @@ async def get_my_loyalty(
     tenant_id: int | None = Header(None, alias=TENANT_HEADER_ALIAS),
 ):
     user_id = _get_user_id(current_user)
-    client = (
-        db.query(Client)
-        .filter(Client.user_id == user_id, Client.deleted.is_(False))
-        .first()
-    )
+    client = get_client_profile_for_user(db, user_id=user_id, tenant_id=tenant_id)
     if client is None:
         raise NotFoundError("Client not found")
     mediator = build_mediator(db)
@@ -57,11 +53,7 @@ async def redeem_loyalty_points(
     tenant_id: int | None = Header(None, alias=TENANT_HEADER_ALIAS),
 ):
     user_id = _get_user_id(current_user)
-    client = (
-        db.query(Client)
-        .filter(Client.user_id == user_id, Client.deleted.is_(False))
-        .first()
-    )
+    client = get_client_profile_for_user(db, user_id=user_id, tenant_id=tenant_id)
     if client is None:
         raise NotFoundError("Client not found")
     mediator = build_mediator(db)
