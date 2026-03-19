@@ -5,7 +5,7 @@ import { getApiError } from '../lib/api';
 import { useToast } from '../components/Toast';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, tenantId } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -18,7 +18,13 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const user = await login(username, password);
-      const dest = user.role === 'admin' ? '/admin' : user.role === 'barber' ? '/barber' : '/client';
+      const dest = user.role === 'admin'
+        ? '/admin'
+        : user.role === 'barber'
+          ? '/barber'
+          : tenantId
+            ? '/client'
+            : '/barbershops';
       navigate(dest, { replace: true });
     } catch (err) {
       toast(getApiError(err, 'Credenciais invalidas'), 'error');
@@ -136,6 +142,9 @@ export default function LoginPage() {
                   Cria uma aqui &rarr;
                 </span>
               </Link>
+              <p className="mt-3 text-xs text-slate-500">
+                Se chegaste pelo site de uma barbearia, usa de preferencia o link de login dessa barbearia.
+              </p>
             </div>
           </div>
         </div>

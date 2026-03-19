@@ -1,5 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import api, { getApiError } from '../../lib/api';
+import ClientEmptyState from '../../components/ClientEmptyState';
+import ClientPageHeader from '../../components/ClientPageHeader';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Spinner from '../../components/Spinner';
@@ -9,7 +11,7 @@ import type { Client } from '../../types';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { clientId } = useAuth();
+  const { clientId, tenantId } = useAuth();
 
   /* Profile */
   const [client, setClient] = useState<Client | null>(null);
@@ -22,6 +24,12 @@ export default function ProfilePage() {
   const [savingPw, setSavingPw] = useState(false);
 
   useEffect(() => {
+    if (!tenantId) {
+      setClient(null);
+      setLoading(false);
+      return;
+    }
+
     api
       .get('/clients/me')
       .then((res) => {
@@ -31,7 +39,7 @@ export default function ProfilePage() {
       })
       .catch((err) => toast(getApiError(err, 'Erro ao carregar perfil'), 'error'))
       .finally(() => setLoading(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSaveProfile(e: FormEvent) {
     e.preventDefault();
@@ -74,14 +82,26 @@ export default function ProfilePage() {
   }
 
   if (loading) return <Spinner />;
+  if (!tenantId) {
+    return (
+      <ClientEmptyState
+        message="Escolhe primeiro a barbearia cujo perfil queres consultar."
+        linkTo="/barbershops"
+        linkLabel="Ver barbearias"
+      />
+    );
+  }
   if (!client) return <p className="text-sm text-slate-500">Perfil não encontrado.</p>;
 
   return (
     <div className="mx-auto max-w-lg space-y-10">
-      <h1 className="text-2xl font-semibold text-slate-800">O meu perfil</h1>
+      <ClientPageHeader
+        title="O Meu Perfil"
+        description="Atualiza os teus dados pessoais e gere o acesso à tua conta."
+      />
 
       {/* Profile form */}
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="mb-5 text-base font-medium text-slate-700">Dados pessoais</h2>
         <form onSubmit={handleSaveProfile} className="space-y-4">
           <Input
@@ -109,7 +129,7 @@ export default function ProfilePage() {
       </section>
 
       {/* Password form */}
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="mb-5 text-base font-medium text-slate-700">Alterar password</h2>
         <form onSubmit={handleChangePassword} className="space-y-4">
           <Input

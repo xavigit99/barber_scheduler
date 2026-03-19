@@ -1,18 +1,15 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import api, { getApiError } from '../lib/api';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
 
   const [nome, setNome] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const tenantFromUrl = searchParams.get('tenant') ?? '';
-  const [tenantId, setTenantId] = useState(tenantFromUrl);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,10 +29,6 @@ export default function RegisterPage() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       next.email = 'Email invalido';
-    }
-
-    if (!tenantId || isNaN(Number(tenantId)) || Number(tenantId) < 1) {
-      next.tenantId = 'ID da barbearia invalido';
     }
 
     if (password.length < 8) {
@@ -61,7 +54,6 @@ export default function RegisterPage() {
         username,
         email,
         password,
-        tenant_id: Number(tenantId),
       });
       toast('Conta criada com sucesso!', 'success');
       navigate('/login', { replace: true });
@@ -128,7 +120,9 @@ export default function RegisterPage() {
           <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl shadow-black/40 backdrop-blur-sm">
             <div className="mb-8">
               <h2 className="text-2xl font-semibold text-white">Criar conta</h2>
-              <p className="text-sm text-slate-500 mt-1">Preenche os dados para te registares</p>
+              <p className="text-sm text-slate-500 mt-1">
+                Cria uma conta global. Se vieste pelo site de uma barbearia, o ideal e registares-te pelo link dessa barbearia.
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -189,30 +183,6 @@ export default function RegisterPage() {
                   <span className="text-xs text-red-400">{errors.email}</span>
                 )}
               </div>
-
-              {/* Tenant ID — hidden when pre-filled via URL param */}
-              {tenantFromUrl ? (
-                <input type="hidden" value={tenantId} />
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="reg-tenant" className="text-sm font-medium text-slate-300">
-                    ID da Barbearia
-                  </label>
-                  <input
-                    id="reg-tenant"
-                    type="number"
-                    min="1"
-                    value={tenantId}
-                    onChange={(e) => setTenantId(e.target.value)}
-                    required
-                    placeholder="Fornecido pela barbearia"
-                    className={errors.tenantId ? inputErrorClasses : inputClasses}
-                  />
-                  {errors.tenantId && (
-                    <span className="text-xs text-red-400">{errors.tenantId}</span>
-                  )}
-                </div>
-              )}
 
               {/* Password */}
               <div className="flex flex-col gap-1.5">

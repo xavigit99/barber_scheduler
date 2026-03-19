@@ -7,6 +7,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
 from backend.core.exceptions import ConflictError, ValidationError
 from backend.core.scheduling import (
+    app_weekday_from_python,
     build_daily_slots,
     ensure_no_availability_overlap,
     ensure_valid_timezone,
@@ -42,7 +43,7 @@ class SchedulingTestCase(unittest.TestCase):
             timezone_name="Europe/Lisbon",
             availability_windows=[
                 SimpleNamespace(
-                    weekday=0,
+                    weekday=1,
                     start_time=time(9, 0),
                     end_time=time(11, 0),
                 )
@@ -72,6 +73,29 @@ class SchedulingTestCase(unittest.TestCase):
             validate_time_range(time(18, 0), time(9, 0))
 
         self.assertEqual(str(context.exception), "start_time must be earlier than end_time")
+
+    def test_build_daily_slots_excludes_past_slots_when_earliest_start_is_set(self):
+        slots = build_daily_slots(
+            target_date=date(2026, 3, 16),
+            timezone_name="Europe/Lisbon",
+            availability_windows=[
+                SimpleNamespace(
+                    weekday=1,
+                    start_time=time(9, 0),
+                    end_time=time(11, 0),
+                )
+            ],
+            blocks=[],
+            service_duration_minutes=30,
+            earliest_start_at=datetime(2026, 3, 16, 10, 0),
+        )
+
+        self.assertEqual([slot["inicio"].time() for slot in slots], [time(10, 15), time(10, 30)])
+
+    def test_app_weekday_from_python_matches_ui_convention(self):
+        self.assertEqual(app_weekday_from_python(0), 1)  # Monday
+        self.assertEqual(app_weekday_from_python(4), 5)  # Friday
+        self.assertEqual(app_weekday_from_python(6), 0)  # Sunday
 
 
 if __name__ == "__main__":

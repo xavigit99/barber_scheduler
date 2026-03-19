@@ -43,7 +43,6 @@ def build_register_client_command(payload: ClientRegisterRequest) -> RegisterCli
         email=payload.email,
         password=payload.password,
         nome=payload.nome,
-        tenant_id=payload.tenant_id,
     )
 
 

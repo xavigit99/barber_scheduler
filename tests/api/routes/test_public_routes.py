@@ -8,6 +8,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 from fastapi import HTTPException
 
 from backend.api.routes.public_routes import (
+    public_get_available_dates,
     public_get_slots_v2,
     public_list_barbers,
     public_list_services,
@@ -235,6 +236,57 @@ class TestPublicGetSlotsV2(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(result, [])
+
+
+class TestPublicGetAvailableDates(unittest.IsolatedAsyncioTestCase):
+
+    _TENANT_ID = 10
+
+    async def test_returns_available_dates_for_valid_barber_and_service(self):
+        mediator = FakeMediator(
+            {
+                "barber_id": 3,
+                "service_id": 2,
+                "start_date": date(2026, 4, 1),
+                "end_date": date(2026, 4, 30),
+                "timezone": "Europe/Lisbon",
+                "dates": [date(2026, 4, 1), date(2026, 4, 3)],
+            }
+        )
+
+        with patch("backend.api.routes.public_routes.build_mediator", return_value=mediator), \
+             patch("backend.api.routes.public_routes.BaseRepository", new=_make_fake_repo(self._TENANT_ID)):
+            result = await public_get_available_dates(
+                tenant_id=self._TENANT_ID,
+                barber_id=3,
+                service_id=2,
+                start_date=date(2026, 4, 1),
+                end_date=date(2026, 4, 30),
+                timezone="Europe/Lisbon",
+                db=object(),
+            )
+
+        self.assertEqual(result["dates"], [date(2026, 4, 1), date(2026, 4, 3)])
+        self.assertEqual(mediator.requests[0].start_date, date(2026, 4, 1))
+
+    async def test_raises_404_when_barber_does_not_belong_to_tenant(self):
+        mediator = FakeMediator({})
+
+        with patch("backend.api.routes.public_routes.build_mediator", return_value=mediator), \
+             patch("backend.api.routes.public_routes.BaseRepository", new=_make_fake_repo(tenant_id=999)):
+            with self.assertRaises(HTTPException) as ctx:
+                await public_get_available_dates(
+                    tenant_id=self._TENANT_ID,
+                    barber_id=3,
+                    service_id=2,
+                    start_date=date(2026, 4, 1),
+                    end_date=date(2026, 4, 30),
+                    timezone="Europe/Lisbon",
+                    db=object(),
+                )
+
+        self.assertEqual(ctx.exception.status_code, 404)
+        self.assertEqual(ctx.exception.detail, "Barber not found")
 
 
 if __name__ == "__main__":

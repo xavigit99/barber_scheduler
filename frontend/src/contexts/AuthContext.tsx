@@ -77,14 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(u);
         const roles = u.role.split(',');
         if (roles.includes('client')) {
-          const profile = await resolveClientProfile();
-          if (profile) {
-            setClientId(profile.clientId);
-            if (!getTenantId()) {
-              storeTenantId(profile.tenantId);
-              setTenantId(profile.tenantId);
-            }
-          }
+          setClientId(null);
         }
         if (roles.includes('barber')) {
           const profile = await resolveBarberProfile();
@@ -104,6 +97,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (!user || !user.role.split(',').includes('client') || !tenantId) {
+      if (user?.role.split(',').includes('client')) {
+        setClientId(null);
+      }
+      return;
+    }
+
+    resolveClientProfile()
+      .then((profile) => {
+        setClientId(profile?.clientId ?? null);
+      })
+      .catch(() => {
+        setClientId(null);
+      });
+  }, [user, tenantId]);
+
   const login = useCallback(async (username: string, password: string): Promise<User> => {
     const res = await api.post('/auth/login', { username, password });
     const { access_token, user: userData } = res.data;
@@ -112,12 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const roles = userData.role.split(',');
     if (roles.includes('client')) {
-      const profile = await resolveClientProfile();
-      if (profile) {
-        setClientId(profile.clientId);
-        storeTenantId(profile.tenantId);
-        setTenantId(profile.tenantId);
-      }
+      setClientId(null);
     }
     if (roles.includes('barber')) {
       const profile = await resolveBarberProfile();

@@ -45,10 +45,16 @@ import BarbershopsListPage from './pages/public/BarbershopsListPage';
 
 /* Root redirect — sends user to role-appropriate home */
 function RootRedirect() {
-  const { user, loading } = useAuth();
+  const { user, loading, tenantId } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/barbershops" replace />;
-  const dest = user.role === 'admin' ? '/admin' : user.role === 'barber' ? '/barber' : '/client';
+  const dest = user.role === 'admin'
+    ? '/admin'
+    : user.role === 'barber'
+      ? '/barber'
+      : tenantId
+        ? '/client'
+        : '/barbershops';
   return <Navigate to={dest} replace />;
 }
 

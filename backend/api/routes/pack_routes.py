@@ -8,7 +8,7 @@ from backend.application.commands.create_service_pack_command import CreateServi
 from backend.application.commands.purchase_client_pack_command import PurchaseClientPackCommand
 from backend.application.queries.list_client_packs_query import ListClientPacksQuery
 from backend.application.queries.list_service_packs_query import ListServicePacksQuery
-from backend.core.client import Client
+from backend.core.client_profiles import get_client_profile_for_user
 from backend.core.exceptions import NotFoundError
 from backend.core.roles import ADMIN_ROLE, CLIENT_ROLE
 from backend.infrastructure.database import get_db
@@ -103,11 +103,7 @@ async def list_my_packs(
     tenant_id: int | None = Header(None, alias=TENANT_HEADER_ALIAS),
 ):
     user_id = _get_user_id(current_user)
-    client = (
-        db.query(Client)
-        .filter(Client.user_id == user_id, Client.deleted.is_(False))
-        .first()
-    )
+    client = get_client_profile_for_user(db, user_id=user_id, tenant_id=tenant_id)
     if client is None:
         return []
     mediator = build_mediator(db)

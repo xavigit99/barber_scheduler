@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import type { Barbershop } from '../../types';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
 export default function BarbershopsListPage() {
+  const navigate = useNavigate();
+  const { user, selectTenant } = useAuth();
   const [barbershops, setBarbershops] = useState<Barbershop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -16,6 +19,15 @@ export default function BarbershopsListPage() {
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
+
+  function handleSelectBarbershop(shop: Barbershop) {
+    selectTenant(String(shop.tenant_id), shop.nome);
+    if (user?.role.split(',').includes('client')) {
+      navigate('/client');
+      return;
+    }
+    navigate(`/book/${shop.tenant_id}`);
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
@@ -41,7 +53,7 @@ export default function BarbershopsListPage() {
             Barber<span className="text-amber-400">Pro</span>
           </h1>
           <p className="text-slate-400 text-lg max-w-xs mx-auto">
-            O teu corte perfeito, a um clique de distância
+            Agenda servicos de barbearia, grooming e estetica complementar num so lugar
           </p>
 
           <div className="mt-6 flex items-center justify-center gap-3 text-slate-600">
@@ -66,14 +78,15 @@ export default function BarbershopsListPage() {
           )}
 
           {!loading && !error && barbershops.length === 0 && (
-            <p className="text-center text-slate-500 py-16">Nenhuma barbearia disponível.</p>
+            <p className="text-center text-slate-500 py-16">Nenhuma barbearia disponivel.</p>
           )}
 
           {!loading && !error && barbershops.map((shop) => (
-            <Link
+            <button
               key={shop.id}
-              to={`/book/${shop.tenant_id}`}
-              className="flex items-center gap-4 w-full rounded-2xl border border-slate-800 bg-slate-900 p-5 hover:border-amber-500/40 hover:bg-slate-800/60 transition-all group"
+              type="button"
+              onClick={() => handleSelectBarbershop(shop)}
+              className="flex items-center gap-4 w-full rounded-2xl border border-slate-800 bg-slate-900 p-5 hover:border-amber-500/40 hover:bg-slate-800/60 transition-all group text-left cursor-pointer"
             >
               {/* Avatar */}
               <div className="shrink-0 h-12 w-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-bold text-xl group-hover:bg-amber-500/20 transition-colors">
@@ -94,7 +107,7 @@ export default function BarbershopsListPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </div>
-            </Link>
+            </button>
           ))}
         </div>
       </div>

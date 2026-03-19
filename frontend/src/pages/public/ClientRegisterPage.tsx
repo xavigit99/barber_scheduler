@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/Toast';
 import api, { getApiError } from '../../lib/api';
 
 export default function ClientRegisterPage() {
   const { tenantId } = useParams<{ tenantId: string }>();
   const navigate = useNavigate();
+  const { selectTenant } = useAuth();
   const { toast } = useToast();
 
   const [nome, setNome] = useState('');
@@ -42,10 +44,12 @@ export default function ClientRegisterPage() {
         username,
         email,
         password,
-        tenant_id: Number(tenantId),
       });
+      if (tenantId) {
+        selectTenant(tenantId);
+      }
       toast('Conta criada! Podes entrar agora.', 'success');
-      navigate('/login', { replace: true });
+      navigate(`/signin/${tenantId}`, { replace: true });
     } catch (err) {
       toast(getApiError(err, 'Erro ao criar conta. Tenta novamente.'), 'error');
     } finally {
@@ -71,7 +75,7 @@ export default function ClientRegisterPage() {
 
         <h1 className="text-2xl font-bold text-white mb-1">Criar conta</h1>
         <p className="text-sm text-slate-400 mb-8">
-          Cria a tua conta para gerir os teus agendamentos.
+          Cria a tua conta para marcar e gerir os teus agendamentos nesta barbearia.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

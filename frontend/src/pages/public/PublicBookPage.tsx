@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import DateAvailabilityCalendar from '../../components/DateAvailabilityCalendar';
+import { useAuth } from '../../contexts/AuthContext';
+import { formatDayLabel, monthBounds, monthKeyFromDate } from '../../lib/dateCalendar';
 import type { Barber, Service, AvailableSlot, PublicFeedback } from '../../types';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
@@ -27,6 +30,7 @@ function StarRating({ rating }: { rating: number }) {
 
 export default function PublicBookPage() {
   const { tenantId } = useParams<{ tenantId: string }>();
+  const { user, selectTenant } = useAuth();
 
   const [step, setStep] = useState<Step>('barber');
   const [barbers, setBarbers] = useState<Barber[]>([]);
@@ -35,6 +39,7 @@ export default function PublicBookPage() {
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [loadingAvailableDates, setLoadingAvailableDates] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
@@ -43,6 +48,8 @@ export default function PublicBookPage() {
   const [selectedBarber, setSelectedBarber] = useState<Barber | null>(null);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [targetDate, setTargetDate] = useState('');
+  const [calendarMonth, setCalendarMonth] = useState(() => monthKeyFromDate(new Date()));
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
 
   /* client info */
@@ -52,6 +59,12 @@ export default function PublicBookPage() {
 
   /* Clear error banner whenever the user navigates to a different step */
   useEffect(() => { setError(''); }, [step]);
+
+  useEffect(() => {
+    if (tenantId) {
+      selectTenant(tenantId);
+    }
+  }, [tenantId, selectTenant]);
 
   useEffect(() => {
     if (!tenantId) return;
@@ -100,6 +113,27 @@ export default function PublicBookPage() {
       .finally(() => setLoadingSlots(false));
   }, [step, selectedBarber, selectedService, targetDate, tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (step !== 'date' || !selectedBarber || !selectedService || !tenantId) return;
+
+    const { startDate, endDate } = monthBounds(calendarMonth);
+    setLoadingAvailableDates(true);
+    fetch(
+      `${BASE}/public/tenants/${tenantId}/barbers/${selectedBarber.id}/available-dates?service_id=${selectedService.id}&start_date=${startDate}&end_date=${endDate}&timezone=Europe/Lisbon`,
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        const list = Array.isArray(data?.dates) ? data.dates : [];
+        setAvailableDates(list);
+        if (targetDate && !list.includes(targetDate)) {
+          setTargetDate('');
+          setSelectedSlot(null);
+        }
+      })
+      .catch(() => setAvailableDates([]))
+      .finally(() => setLoadingAvailableDates(false));
+  }, [step, selectedBarber, selectedService, tenantId, calendarMonth, targetDate]);
+
   async function handleConfirm() {
     if (!selectedSlot || !selectedBarber || !selectedService || !tenantId) return;
     setSubmitting(true);
@@ -146,12 +180,21 @@ export default function PublicBookPage() {
           <p className="text-slate-400">
             Receberás uma confirmação em <span className="text-white">{clientEmail}</span>.
           </p>
-          <Link
-            to={`/join/${tenantId}`}
-            className="block w-full rounded-xl border border-amber-500/50 py-3 text-amber-400 font-medium hover:bg-amber-500/10 transition-colors"
-          >
-            Criar conta para gerir agendamentos
-          </Link>
+          {user?.role.split(',').includes('client') ? (
+            <Link
+              to="/client"
+              className="block w-full rounded-xl border border-emerald-500/50 py-3 text-emerald-400 font-medium hover:bg-emerald-500/10 transition-colors"
+            >
+              Voltar para a minha area nesta barbearia
+            </Link>
+          ) : (
+            <Link
+              to={`/join/${tenantId}`}
+              className="block w-full rounded-xl border border-amber-500/50 py-3 text-amber-400 font-medium hover:bg-amber-500/10 transition-colors"
+            >
+              Criar conta nesta barbearia
+            </Link>
+          )}
           <button
             onClick={() => {
               setDone(false);
@@ -185,13 +228,21 @@ export default function PublicBookPage() {
             <span className="text-white font-semibold text-lg">BarberPro</span>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <Link to={`/signin/${tenantId}`} className="text-slate-400 hover:text-white transition-colors">Entrar</Link>
-            <Link
-              to={`/join/${tenantId}`}
-              className="rounded-lg bg-amber-500 px-3 py-1.5 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
-            >
-              Criar conta
-            </Link>
+            {user?.role.split(',').includes('client') ? (
+              <Link to="/client" className="text-emerald-400 hover:text-emerald-300 transition-colors">
+                Minha area
+              </Link>
+            ) : (
+              <>
+                <Link to={`/signin/${tenantId}`} className="text-slate-400 hover:text-white transition-colors">Entrar</Link>
+                <Link
+                  to={`/join/${tenantId}`}
+                  className="rounded-lg bg-amber-500 px-3 py-1.5 text-slate-900 font-semibold hover:bg-amber-400 transition-colors"
+                >
+                  Criar conta
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
@@ -221,7 +272,14 @@ export default function PublicBookPage() {
             {barbers.map((b) => (
               <button
                 key={b.id}
-                onClick={() => { setSelectedBarber(b); setStep('service'); }}
+                onClick={() => {
+                  setSelectedBarber(b);
+                  setTargetDate('');
+                  setSelectedSlot(null);
+                  setAvailableDates([]);
+                  setCalendarMonth(monthKeyFromDate(new Date()));
+                  setStep('service');
+                }}
                 className={`w-full rounded-xl border p-4 text-left transition-colors ${
                   selectedBarber?.id === b.id
                     ? 'border-amber-500 bg-amber-500/10'
@@ -247,7 +305,14 @@ export default function PublicBookPage() {
             {services.map((s) => (
               <button
                 key={s.id}
-                onClick={() => { setSelectedService(s); setStep('date'); }}
+                onClick={() => {
+                  setSelectedService(s);
+                  setTargetDate('');
+                  setSelectedSlot(null);
+                  setAvailableDates([]);
+                  setCalendarMonth(monthKeyFromDate(new Date()));
+                  setStep('date');
+                }}
                 className={`w-full rounded-xl border p-4 text-left transition-colors ${
                   selectedService?.id === s.id
                     ? 'border-amber-500 bg-amber-500/10'
@@ -274,13 +339,27 @@ export default function PublicBookPage() {
         {step === 'date' && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-white mb-4">Escolha a data</h2>
-            <input
-              type="date"
-              value={targetDate}
-              min={new Date().toISOString().split('T')[0]}
-              onChange={(e) => setTargetDate(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-4 text-white text-base focus:outline-none focus:border-amber-500"
+            <DateAvailabilityCalendar
+              month={calendarMonth}
+              onMonthChange={setCalendarMonth}
+              selectedDate={targetDate}
+              onSelectDate={(date) => {
+                setTargetDate(date);
+                setSelectedSlot(null);
+              }}
+              highlightedDates={availableDates}
+              loading={loadingAvailableDates}
+              minDate={new Date().toISOString().split('T')[0]}
+              tone="available"
+              theme="dark"
+              helperText="Os dias a verde ja tem horarios livres para este barbeiro e servico."
+              emptyText="Nao encontramos dias livres neste mes para esta combinacao."
             />
+            {targetDate && (
+              <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+                Dia escolhido: <span className="font-semibold">{formatDayLabel(new Date(`${targetDate}T00:00:00`))}</span>
+              </p>
+            )}
             <button
               disabled={!targetDate}
               onClick={() => { setSelectedSlot(null); setStep('slot'); }}

@@ -9,6 +9,7 @@ from backend.api.availability_http import (
     build_create_barber_block_command,
     build_delete_barber_availability_command,
     build_delete_barber_block_command,
+    build_get_available_dates_query,
     build_get_available_slots_query,
     build_list_barber_availabilities_query,
     build_list_barber_blocks_query,
@@ -23,6 +24,7 @@ from backend.core.exceptions import ConflictError, NotFoundError, ValidationErro
 from backend.core.roles import ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE
 from backend.infrastructure.database import get_db
 from backend.infrastructure.schemas import (
+    AvailableDatesResponse,
     AvailableSlotsResponse,
     BarberAvailabilityCreate,
     BarberAvailabilityResponse,
@@ -177,6 +179,31 @@ async def get_available_slots(
                 barber_id=barber_id,
                 service_id=service_id,
                 target_date=target_date,
+                timezone=timezone,
+            )
+        )
+    except (NotFoundError, ValidationError) as exc:
+        raise to_http_exception(exc) from exc
+
+
+@router.get("/dates", response_model=AvailableDatesResponse)
+async def get_available_dates(
+    barber_id: int,
+    service_id: int,
+    start_date: date,
+    end_date: date,
+    timezone: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles(ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE)),
+):
+    mediator = build_mediator(db)
+    try:
+        return await mediator.send(
+            build_get_available_dates_query(
+                barber_id=barber_id,
+                service_id=service_id,
+                start_date=start_date,
+                end_date=end_date,
                 timezone=timezone,
             )
         )

@@ -12,6 +12,7 @@ from backend.api.routes.availability_routes import (
     create_barber_block,
     delete_barber_availability,
     delete_barber_block,
+    get_available_dates,
     get_available_slots,
     list_barber_availabilities,
     update_barber_availability,
@@ -250,6 +251,35 @@ class AvailabilityRoutesTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(context.exception.status_code, 404)
         self.assertEqual(context.exception.detail, "Service not found")
+
+    async def test_get_available_dates_returns_payload(self):
+        mediator = FakeMediator(
+            {
+                "barber_id": 3,
+                "service_id": 2,
+                "start_date": date(2026, 3, 1),
+                "end_date": date(2026, 3, 31),
+                "timezone": "Europe/Lisbon",
+                "dates": [date(2026, 3, 16), date(2026, 3, 18)],
+            }
+        )
+
+        with patch(
+            "backend.api.routes.availability_routes.build_mediator",
+            return_value=mediator,
+        ):
+            result = await get_available_dates(
+                3,
+                service_id=2,
+                start_date=date(2026, 3, 1),
+                end_date=date(2026, 3, 31),
+                timezone="Europe/Lisbon",
+                db=object(),
+            )
+
+        self.assertEqual(result["dates"], [date(2026, 3, 16), date(2026, 3, 18)])
+        self.assertEqual(mediator.requests[0].start_date, date(2026, 3, 1))
+        self.assertEqual(mediator.requests[0].end_date, date(2026, 3, 31))
 
 
 if __name__ == "__main__":

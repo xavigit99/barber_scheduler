@@ -15,6 +15,10 @@ from backend.api.client_http import (
 from backend.api.tenant_header import TENANT_HEADER_ALIAS, require_tenant_id
 from backend.application.queries.get_client_segment_query import GetClientSegmentQuery
 from backend.core.client import Client
+from backend.core.client_profiles import (
+    get_client_profile_for_user,
+    get_or_create_client_profile_for_user,
+)
 from backend.core.roles import ADMIN_ROLE, BARBER_ROLE, CLIENT_ROLE
 from backend.infrastructure.database import get_db
 from backend.infrastructure.schemas import ClientCreate, ClientResponse, ClientUpdate
@@ -27,13 +31,13 @@ router = APIRouter(prefix="/clients", tags=["Clients"])
 async def get_my_client(
     db: Session = Depends(get_db),
     current_user=Depends(require_roles(CLIENT_ROLE)),
+    tenant_id: int | None = Header(None, alias=TENANT_HEADER_ALIAS),
 ):
     user_id = current_user.get("id") if isinstance(current_user, dict) else getattr(current_user, "id", None)
-    client = (
-        db.query(Client)
-        .filter(Client.user_id == user_id, Client.deleted.is_(False))
-        .first()
-    )
+    if tenant_id is not None:
+        client = get_or_create_client_profile_for_user(db, user_id=user_id, tenant_id=tenant_id)
+    else:
+        client = get_client_profile_for_user(db, user_id=user_id, tenant_id=None)
     if client is None:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Client profile not found")

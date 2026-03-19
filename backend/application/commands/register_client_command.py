@@ -9,4 +9,3 @@ class RegisterClientCommand(Request):
     email: str
     password: str
     nome: str
-    tenant_id: int

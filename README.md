@@ -22,7 +22,7 @@ Sistema SaaS de gestão de barbearias com suporte multi-tenant, agendamentos onl
 
 ## Visão Geral
 
-O **BarberPro** é uma plataforma de agendamento para barbearias com três perfis de utilizador distintos:
+O **BarberPro** é uma plataforma de agendamento para barbearias com três perfis de utilizador distintos, incluindo suporte a serviços complementares de grooming e estética.
 
 | Perfil | Acesso |
 |--------|--------|

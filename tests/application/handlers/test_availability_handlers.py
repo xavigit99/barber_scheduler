@@ -3,6 +3,7 @@ import unittest
 from datetime import date, datetime, time
 from types import SimpleNamespace
 from unittest.mock import MagicMock
+from zoneinfo import ZoneInfo
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
@@ -22,6 +23,10 @@ from backend.application.handlers.availability.create_barber_block_handler impor
 from backend.application.handlers.availability.get_available_slots_handler import (
     GetAvailableSlotsHandler,
 )
+from backend.application.handlers.availability.get_available_dates_handler import (
+    GetAvailableDatesHandler,
+)
+from backend.application.queries.get_available_dates_query import GetAvailableDatesQuery
 from backend.application.handlers.availability.list_barber_availabilities_handler import (
     ListBarberAvailabilitiesHandler,
 )
@@ -195,7 +200,7 @@ class AvailabilityHandlersTestCase(unittest.IsolatedAsyncioTestCase):
         availability_query.order_by.return_value = availability_query
         availability_query.all.return_value = [
             SimpleNamespace(
-                weekday=0,
+                weekday=1,
                 start_time=time(9, 0),
                 end_time=time(11, 0),
             )
@@ -228,6 +233,143 @@ class AvailabilityHandlersTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["slots"][0]["inicio"].hour, 9)
         self.assertEqual(result["slots"][-1]["inicio"].hour, 10)
         self.assertEqual(result["slots"][-1]["inicio"].minute, 30)
+
+    async def test_get_available_dates_handler_returns_only_days_with_slots(self):
+        db = MagicMock()
+        barber_query = MagicMock()
+        service_query = MagicMock()
+        availability_query = MagicMock()
+        blocks_query = MagicMock()
+        appointments_query = MagicMock()
+
+        db.query.side_effect = [
+            barber_query,
+            service_query,
+            availability_query,
+            blocks_query,
+            appointments_query,
+            barber_query,
+            service_query,
+            availability_query,
+            blocks_query,
+            appointments_query,
+        ]
+        barber_query.filter.return_value = barber_query
+        barber_query.first.return_value = object()
+        service_query.filter.return_value = service_query
+        service_query.first.return_value = SimpleNamespace(duracao_minutos=30)
+        availability_query.filter.return_value = availability_query
+        availability_query.order_by.return_value = availability_query
+        availability_query.all.side_effect = [
+            [SimpleNamespace(weekday=1, start_time=time(9, 0), end_time=time(11, 0))],
+            [],
+        ]
+        blocks_query.filter.return_value = blocks_query
+        blocks_query.order_by.return_value = blocks_query
+        blocks_query.all.return_value = []
+        appointments_query.filter.return_value = appointments_query
+        appointments_query.all.return_value = []
+
+        handler = GetAvailableDatesHandler(db)
+
+        result = await handler.handle(
+            GetAvailableDatesQuery(
+                barber_id=3,
+                service_id=2,
+                start_date=date(2026, 3, 16),
+                end_date=date(2026, 3, 17),
+                timezone="Europe/Lisbon",
+            )
+        )
+
+        self.assertEqual(result["barber_id"], 3)
+        self.assertEqual(result["dates"], [date(2026, 3, 16)])
+
+    async def test_get_available_slots_handler_ignores_past_slots_for_today(self):
+        db = MagicMock()
+        barber_query = MagicMock()
+        service_query = MagicMock()
+        availability_query = MagicMock()
+        blocks_query = MagicMock()
+        appointments_query = MagicMock()
+
+        db.query.side_effect = [barber_query, service_query, availability_query, blocks_query, appointments_query]
+        barber_query.filter.return_value = barber_query
+        barber_query.first.return_value = object()
+        service_query.filter.return_value = service_query
+        service_query.first.return_value = SimpleNamespace(duracao_minutos=30)
+        availability_query.filter.return_value = availability_query
+        availability_query.order_by.return_value = availability_query
+        availability_query.all.return_value = [
+            SimpleNamespace(weekday=1, start_time=time(9, 0), end_time=time(11, 0))
+        ]
+        blocks_query.filter.return_value = blocks_query
+        blocks_query.order_by.return_value = blocks_query
+        blocks_query.all.return_value = []
+        appointments_query.filter.return_value = appointments_query
+        appointments_query.all.return_value = []
+
+        handler = GetAvailableSlotsHandler(db)
+
+        from unittest.mock import patch
+        with patch(
+            "backend.application.handlers.availability.availability_service.datetime"
+        ) as mocked_datetime:
+            mocked_datetime.now.return_value = datetime(2026, 3, 16, 10, 0, tzinfo=ZoneInfo("Europe/Lisbon"))
+            mocked_datetime.combine = datetime.combine
+
+            result = await handler.handle(
+                GetAvailableSlotsQuery(
+                    barber_id=3,
+                    service_id=2,
+                    target_date=date(2026, 3, 16),
+                    timezone="Europe/Lisbon",
+                )
+            )
+
+        self.assertEqual([slot["inicio"].time() for slot in result["slots"]], [time(10, 15), time(10, 30)])
+
+    async def test_get_available_slots_handler_filters_existing_appointments_by_local_day(self):
+        db = MagicMock()
+        barber_query = MagicMock()
+        service_query = MagicMock()
+        availability_query = MagicMock()
+        blocks_query = MagicMock()
+        appointments_query = MagicMock()
+
+        db.query.side_effect = [barber_query, service_query, availability_query, blocks_query, appointments_query]
+        barber_query.filter.return_value = barber_query
+        barber_query.first.return_value = object()
+        service_query.filter.return_value = service_query
+        service_query.first.return_value = SimpleNamespace(duracao_minutos=30)
+        availability_query.filter.return_value = availability_query
+        availability_query.order_by.return_value = availability_query
+        availability_query.all.return_value = [
+            SimpleNamespace(weekday=5, start_time=time(9, 0), end_time=time(10, 0))
+        ]
+        blocks_query.filter.return_value = blocks_query
+        blocks_query.order_by.return_value = blocks_query
+        blocks_query.all.return_value = []
+        appointments_query.filter.return_value = appointments_query
+        appointments_query.all.return_value = [
+            SimpleNamespace(
+                start_at=datetime(2026, 3, 20, 9, 0, tzinfo=ZoneInfo("Europe/Lisbon")),
+                end_at=datetime(2026, 3, 20, 10, 0, tzinfo=ZoneInfo("Europe/Lisbon")),
+            )
+        ]
+
+        handler = GetAvailableSlotsHandler(db)
+
+        result = await handler.handle(
+            GetAvailableSlotsQuery(
+                barber_id=3,
+                service_id=2,
+                target_date=date(2026, 3, 20),
+                timezone="Europe/Lisbon",
+            )
+        )
+
+        self.assertEqual(result["slots"], [])
 
 
 if __name__ == "__main__":

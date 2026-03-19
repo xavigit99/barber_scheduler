@@ -1,35 +1,43 @@
 import { useState, useEffect } from 'react';
 import api, { getApiError } from '../../lib/api';
 import Button from '../../components/Button';
+import ClientEmptyState from '../../components/ClientEmptyState';
+import ClientPageHeader from '../../components/ClientPageHeader';
+import DateAvailabilityCalendar from '../../components/DateAvailabilityCalendar';
 import Select from '../../components/Select';
-import Input from '../../components/Input';
 import Spinner from '../../components/Spinner';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatDayLabel, monthBounds, monthKeyFromDate } from '../../lib/dateCalendar';
 import type { Barber, Service, AvailableSlot } from '../../types';
-
-type Step = 'barber' | 'service' | 'date' | 'slot' | 'confirm';
 
 export default function BookPage() {
   const { toast } = useToast();
-  const { clientId } = useAuth();
+  const { clientId, tenantId } = useAuth();
 
-  const [step, setStep] = useState<Step>('barber');
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [loadingAvailableDates, setLoadingAvailableDates] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  /* selections */
   const [selectedBarber, setSelectedBarber] = useState('');
   const [selectedService, setSelectedService] = useState('');
   const [targetDate, setTargetDate] = useState('');
+  const [calendarMonth, setCalendarMonth] = useState(() => monthKeyFromDate(new Date()));
   const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
 
   useEffect(() => {
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
+
     async function load() {
+      setLoading(true);
       try {
         const [bRes, sRes] = await Promise.all([
           api.get('/barbers/'),
@@ -44,11 +52,42 @@ export default function BookPage() {
       }
     }
     load();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* Load slots when date is picked */
   useEffect(() => {
-    if (step !== 'slot' || !selectedBarber || !selectedService || !targetDate) return;
+    if (!selectedBarber || !selectedService) {
+      setAvailableDates([]);
+      return;
+    }
+
+    const { startDate, endDate } = monthBounds(calendarMonth);
+    setLoadingAvailableDates(true);
+    api
+      .get(
+        `/barbers/${selectedBarber}/availability/dates?service_id=${selectedService}&start_date=${startDate}&end_date=${endDate}&timezone=Europe/Lisbon`,
+      )
+      .then((res) => {
+        const data = Array.isArray(res.data?.dates) ? res.data.dates : [];
+        setAvailableDates(data);
+        if (targetDate && !data.includes(targetDate)) {
+          setTargetDate('');
+          setSelectedSlot(null);
+          setSlots([]);
+        }
+      })
+      .catch((err) => {
+        toast(getApiError(err, 'Erro ao carregar dias disponiveis'), 'error');
+        setAvailableDates([]);
+      })
+      .finally(() => setLoadingAvailableDates(false));
+  }, [selectedBarber, selectedService, calendarMonth, targetDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!selectedBarber || !selectedService || !targetDate) {
+      setSlots([]);
+      return;
+    }
+
     setLoadingSlots(true);
     api
       .get(
@@ -63,7 +102,7 @@ export default function BookPage() {
         setSlots([]);
       })
       .finally(() => setLoadingSlots(false));
-  }, [step, selectedBarber, selectedService, targetDate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedBarber, selectedService, targetDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleConfirm() {
     if (!selectedSlot || !clientId) return;
@@ -76,12 +115,13 @@ export default function BookPage() {
         data_inicio: selectedSlot.inicio,
       });
       toast('Agendamento confirmado!', 'success');
-      /* reset */
-      setStep('barber');
       setSelectedBarber('');
       setSelectedService('');
       setTargetDate('');
+      setAvailableDates([]);
+      setCalendarMonth(monthKeyFromDate(new Date()));
       setSelectedSlot(null);
+      setSlots([]);
     } catch (err) {
       toast(getApiError(err, 'Erro ao criar agendamento'), 'error');
     } finally {
@@ -91,186 +131,199 @@ export default function BookPage() {
 
   if (loading) return <Spinner />;
 
-  if (!clientId) {
+  if (!tenantId) {
     return (
-      <div className="mx-auto max-w-2xl">
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
-          Perfil de cliente nao encontrado. Contacta a barbearia para activar a tua conta.
-        </div>
-      </div>
+      <ClientEmptyState
+        message="Escolhe primeiro a barbearia onde queres marcar."
+        linkTo="/barbershops"
+        linkLabel="Ver barbearias"
+      />
     );
   }
 
-  const barberName = barbers.find((b) => String(b.id) === selectedBarber)?.nome ?? '';
+  if (!clientId) {
+    return (
+      <ClientEmptyState
+        message="Ainda nao tens historico numa barbearia selecionada. Faz a tua primeira marcacao pela pagina publica da barbearia e a tua ficha passa a ficar associada a essa experiencia."
+        linkTo="/barbershops"
+        linkLabel="Ver barbearias"
+      />
+    );
+  }
+
+  const barberName = barbers.find((b) => String(b.id) === selectedBarber)?.nome ?? 'Por escolher';
   const serviceObj = services.find((s) => String(s.id) === selectedService);
-
-  /* Step indicator */
-  const steps: { key: Step; label: string }[] = [
-    { key: 'barber', label: '1. Barbeiro' },
-    { key: 'service', label: '2. Servico' },
-    { key: 'date', label: '3. Data' },
-    { key: 'slot', label: '4. Horario' },
-    { key: 'confirm', label: '5. Confirmar' },
-  ];
-
-  const stepOrder: Step[] = ['barber', 'service', 'date', 'slot', 'confirm'];
-  const currentIdx = stepOrder.indexOf(step);
+  const canShowCalendar = Boolean(selectedBarber && selectedService);
+  const canConfirm = Boolean(selectedBarber && selectedService && targetDate && selectedSlot);
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-2xl font-semibold text-slate-800">Agendar</h1>
+    <div className="mx-auto max-w-5xl">
+      <ClientPageHeader
+        title="Agendar"
+        description="Escolhe barbeiro, serviço, dia e horário no mesmo ecrã."
+      />
 
-      {/* Progress bar */}
-      <div className="mb-8 flex gap-2">
-        {steps.map((s, i) => (
-          <div
-            key={s.key}
-            className={`flex-1 rounded-full h-2 transition-colors ${
-              i <= currentIdx ? 'bg-emerald-500' : 'bg-slate-200'
-            }`}
-          />
-        ))}
-      </div>
-      <p className="mb-6 text-sm font-medium text-slate-600">{steps[currentIdx].label}</p>
-
-      {/* Step: barber */}
-      {step === 'barber' && (
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]">
         <div className="space-y-4">
-          <Select
-            label="Escolha o barbeiro"
-            options={barbers.map((b) => ({ value: String(b.id), label: b.nome }))}
-            value={selectedBarber}
-            onChange={(e) => setSelectedBarber(e.target.value)}
-            placeholder="Selecione..."
-          />
-          <Button disabled={!selectedBarber} onClick={() => setStep('service')}>
-            Seguinte
-          </Button>
-        </div>
-      )}
-
-      {/* Step: service */}
-      {step === 'service' && (
-        <div className="space-y-4">
-          <Select
-            label="Escolha o servico"
-            options={services.map((s) => ({
-              value: String(s.id),
-              label: `${s.nome} — ${s.duracao_minutos}min — ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(s.preco)}`,
-            }))}
-            value={selectedService}
-            onChange={(e) => setSelectedService(e.target.value)}
-            placeholder="Selecione..."
-          />
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setStep('barber')}>Voltar</Button>
-            <Button disabled={!selectedService} onClick={() => setStep('date')}>Seguinte</Button>
-          </div>
-        </div>
-      )}
-
-      {/* Step: date */}
-      {step === 'date' && (
-        <div className="space-y-4">
-          <Input
-            label="Escolha a data"
-            type="date"
-            value={targetDate}
-            onChange={(e) => setTargetDate(e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
-          />
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setStep('service')}>Voltar</Button>
-            <Button disabled={!targetDate} onClick={() => { setSelectedSlot(null); setStep('slot'); }}>
-              Ver Horarios
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Step: slot */}
-      {step === 'slot' && (
-        <div className="space-y-4">
-          {loadingSlots ? (
-            <Spinner />
-          ) : slots.length === 0 ? (
-            <p className="text-sm text-slate-500">Nenhum horario disponivel para esta data.</p>
-          ) : (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {slots.map((slot) => {
-                const time = new Date(slot.inicio).toLocaleTimeString('pt-PT', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                });
-                const isSelected = selectedSlot?.inicio === slot.inicio;
-                return (
-                  <button
-                    key={slot.inicio}
-                    onClick={() => setSelectedSlot(slot)}
-                    className={`rounded-lg border px-3 py-2 text-sm transition-colors cursor-pointer ${
-                      isSelected
-                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-medium'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-300'
-                    }`}
-                  >
-                    {time}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setStep('date')}>Voltar</Button>
-            <Button disabled={!selectedSlot} onClick={() => setStep('confirm')}>
-              Seguinte
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Step: confirm */}
-      {step === 'confirm' && selectedSlot && (
-        <div className="space-y-4">
-          <div className="rounded-lg border border-slate-200 bg-white p-6 space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Barbeiro</span>
-              <span className="font-medium text-slate-800">{barberName}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Servico</span>
-              <span className="font-medium text-slate-800">{serviceObj?.nome}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Duracao</span>
-              <span className="font-medium text-slate-800">{serviceObj?.duracao_minutos} min</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Preco</span>
-              <span className="font-medium text-slate-800">
-                {serviceObj && new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(serviceObj.preco)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Data</span>
-              <span className="font-medium text-slate-800">{targetDate}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Horario</span>
-              <span className="font-medium text-slate-800">
-                {new Date(selectedSlot.inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
-                {' - '}
-                {new Date(selectedSlot.fim).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
-              </span>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Select
+                label="Barbeiro"
+                options={barbers.map((b) => ({ value: String(b.id), label: b.nome }))}
+                value={selectedBarber}
+                onChange={(e) => {
+                  setSelectedBarber(e.target.value);
+                  setTargetDate('');
+                  setSelectedSlot(null);
+                  setSlots([]);
+                  setAvailableDates([]);
+                  setCalendarMonth(monthKeyFromDate(new Date()));
+                }}
+                placeholder="Selecione..."
+              />
+              <Select
+                label="Serviço"
+                options={services.map((s) => ({
+                  value: String(s.id),
+                  label: `${s.nome} — ${s.duracao_minutos}min — ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(s.preco)}`,
+                }))}
+                value={selectedService}
+                onChange={(e) => {
+                  setSelectedService(e.target.value);
+                  setTargetDate('');
+                  setSelectedSlot(null);
+                  setSlots([]);
+                  setAvailableDates([]);
+                  setCalendarMonth(monthKeyFromDate(new Date()));
+                }}
+                placeholder="Selecione..."
+              />
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setStep('slot')}>Voltar</Button>
-            <Button onClick={handleConfirm} disabled={submitting || !clientId}>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            {!canShowCalendar ? (
+              <p className="text-sm text-slate-500">
+                Escolhe primeiro o barbeiro e o serviço para veres os dias disponíveis.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                <DateAvailabilityCalendar
+                  month={calendarMonth}
+                  onMonthChange={setCalendarMonth}
+                  selectedDate={targetDate}
+                  onSelectDate={(date) => {
+                    setTargetDate(date);
+                    setSelectedSlot(null);
+                  }}
+                  highlightedDates={availableDates}
+                  loading={loadingAvailableDates}
+                  minDate={new Date().toISOString().split('T')[0]}
+                  tone="available"
+                  helperText="Os dias a verde já têm horários livres."
+                  emptyText="Nao existem dias livres neste mes para esta combinacao."
+                />
+                {targetDate && (
+                  <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    Dia escolhido: <span className="font-semibold">{formatDayLabel(new Date(`${targetDate}T00:00:00`))}</span>
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm font-semibold text-slate-800">Horários</p>
+            {!targetDate ? (
+              <p className="mt-2 text-sm text-slate-500">
+                Escolhe um dia para veres os horários disponíveis.
+              </p>
+            ) : loadingSlots ? (
+              <div className="mt-3">
+                <Spinner />
+              </div>
+            ) : slots.length === 0 ? (
+              <p className="mt-2 text-sm text-slate-500">Nenhum horario disponivel para esta data.</p>
+            ) : (
+              <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {slots.map((slot) => {
+                  const time = new Date(slot.inicio).toLocaleTimeString('pt-PT', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  });
+                  const isSelected = selectedSlot?.inicio === slot.inicio;
+                  return (
+                    <button
+                      key={slot.inicio}
+                      type="button"
+                      onClick={() => setSelectedSlot(slot)}
+                      className={`rounded-lg border px-3 py-2 text-sm transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-medium'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-300'
+                      }`}
+                    >
+                      {time}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Resumo</p>
+            <div className="mt-4 space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Barbeiro</span>
+                <span className="font-medium text-slate-800">{barberName}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Serviço</span>
+                <span className="font-medium text-slate-800">{serviceObj?.nome ?? 'Por escolher'}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Duração</span>
+                <span className="font-medium text-slate-800">
+                  {serviceObj ? `${serviceObj.duracao_minutos} min` : 'Por escolher'}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Preço</span>
+                <span className="font-medium text-slate-800">
+                  {serviceObj
+                    ? new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(serviceObj.preco)
+                    : 'Por escolher'}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Data</span>
+                <span className="font-medium text-slate-800">
+                  {targetDate ? formatDayLabel(new Date(`${targetDate}T00:00:00`)) : 'Por escolher'}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Horário</span>
+                <span className="font-medium text-slate-800">
+                  {selectedSlot
+                    ? `${new Date(selectedSlot.inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })} - ${new Date(selectedSlot.fim).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`
+                    : 'Por escolher'}
+                </span>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleConfirm}
+              disabled={!canConfirm || submitting || !clientId}
+              className="mt-5 w-full"
+            >
               {submitting ? 'A agendar...' : 'Confirmar Agendamento'}
             </Button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
