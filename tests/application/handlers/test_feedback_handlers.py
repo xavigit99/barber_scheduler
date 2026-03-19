@@ -2,7 +2,7 @@ import os
 import unittest
 from datetime import datetime
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
@@ -41,20 +41,16 @@ def _setup_create_db(appointment=None, client=None, existing_feedback=None):
     """Return a MagicMock db configured for CreateFeedbackHandler queries."""
     db = MagicMock()
 
-    # query call order: Appointment (via BaseRepository), Client, Feedback
+    # query call order: Appointment (via BaseRepository), Feedback
     appt_q = MagicMock()
     appt_q.filter.return_value = appt_q
     appt_q.first.return_value = appointment
-
-    client_q = MagicMock()
-    client_q.filter.return_value = client_q
-    client_q.first.return_value = client
 
     feedback_q = MagicMock()
     feedback_q.filter.return_value = feedback_q
     feedback_q.first.return_value = existing_feedback
 
-    db.query.side_effect = [appt_q, client_q, feedback_q]
+    db.query.side_effect = [appt_q, feedback_q]
     return db
 
 
@@ -69,7 +65,11 @@ class CreateFeedbackHandlerTest(unittest.IsolatedAsyncioTestCase):
         cmd = CreateFeedbackCommand(
             appointment_id=5, rating=4, user_id=100, tenant_id=10, comentario="Ótimo!"
         )
-        await handler.handle(cmd)
+        with patch(
+            "backend.application.handlers.feedback.create_feedback_handler.get_client_profile_for_user",
+            return_value=client,
+        ):
+            await handler.handle(cmd)
 
         db.add.assert_called_once()
         db.commit.assert_called_once()
@@ -97,8 +97,12 @@ class CreateFeedbackHandlerTest(unittest.IsolatedAsyncioTestCase):
         db = _setup_create_db(appointment=None)
         handler = CreateFeedbackHandler(db)
         cmd = CreateFeedbackCommand(appointment_id=99, rating=3, user_id=100, tenant_id=10)
-        with self.assertRaises(NotFoundError):
-            await handler.handle(cmd)
+        with patch(
+            "backend.application.handlers.feedback.create_feedback_handler.get_client_profile_for_user",
+            return_value=None,
+        ):
+            with self.assertRaises(NotFoundError):
+                await handler.handle(cmd)
 
     async def test_create_client_not_owner_raises_forbidden(self):
         # appointment belongs to client_id=1, but user resolves to client_id=2
@@ -107,8 +111,12 @@ class CreateFeedbackHandlerTest(unittest.IsolatedAsyncioTestCase):
         db = _setup_create_db(appointment=appointment, client=client)
         handler = CreateFeedbackHandler(db)
         cmd = CreateFeedbackCommand(appointment_id=5, rating=3, user_id=100, tenant_id=10)
-        with self.assertRaises(ForbiddenError):
-            await handler.handle(cmd)
+        with patch(
+            "backend.application.handlers.feedback.create_feedback_handler.get_client_profile_for_user",
+            return_value=client,
+        ):
+            with self.assertRaises(ForbiddenError):
+                await handler.handle(cmd)
 
     async def test_create_future_appointment_raises_validation(self):
         future = datetime(2099, 1, 1, 10, 0)
@@ -117,8 +125,12 @@ class CreateFeedbackHandlerTest(unittest.IsolatedAsyncioTestCase):
         db = _setup_create_db(appointment=appointment, client=client)
         handler = CreateFeedbackHandler(db)
         cmd = CreateFeedbackCommand(appointment_id=5, rating=3, user_id=100, tenant_id=10)
-        with self.assertRaises(ValidationError):
-            await handler.handle(cmd)
+        with patch(
+            "backend.application.handlers.feedback.create_feedback_handler.get_client_profile_for_user",
+            return_value=client,
+        ):
+            with self.assertRaises(ValidationError):
+                await handler.handle(cmd)
 
     async def test_create_duplicate_raises_conflict(self):
         appointment = _make_appointment()
@@ -127,8 +139,12 @@ class CreateFeedbackHandlerTest(unittest.IsolatedAsyncioTestCase):
         db = _setup_create_db(appointment=appointment, client=client, existing_feedback=existing)
         handler = CreateFeedbackHandler(db)
         cmd = CreateFeedbackCommand(appointment_id=5, rating=3, user_id=100, tenant_id=10)
-        with self.assertRaises(ConflictError):
-            await handler.handle(cmd)
+        with patch(
+            "backend.application.handlers.feedback.create_feedback_handler.get_client_profile_for_user",
+            return_value=client,
+        ):
+            with self.assertRaises(ConflictError):
+                await handler.handle(cmd)
 
 
 class ListBarberFeedbackHandlerTest(unittest.IsolatedAsyncioTestCase):
@@ -165,29 +181,34 @@ class ListMyFeedbackHandlerTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_returns_feedback_list(self):
         db = MagicMock()
-        client_q = MagicMock()
-        client_q.filter.return_value = client_q
-        client_q.first.return_value = SimpleNamespace(id=1)
-
         feedback_q = MagicMock()
+        feedback_q.filter.return_value = feedback_q
         feedback_q.filter.return_value = feedback_q
         feedback_q.all.return_value = [SimpleNamespace(id=1)]
 
-        db.query.side_effect = [client_q, feedback_q]
+        db.query.return_value = feedback_q
 
         handler = ListMyFeedbackHandler(db)
-        result = await handler.handle(ListMyFeedbackQuery(user_id=100, tenant_id=10))
+        with patch(
+            "backend.application.handlers.feedback.list_my_feedback_handler.get_client_profile_for_user",
+            return_value=SimpleNamespace(id=1),
+        ):
+            result = await handler.handle(ListMyFeedbackQuery(user_id=100, tenant_id=10))
         assert len(result) == 1
 
     async def test_client_not_found_returns_empty(self):
         db = MagicMock()
-        client_q = MagicMock()
-        client_q.filter.return_value = client_q
-        client_q.first.return_value = None
-        db.query.return_value = client_q
-
         handler = ListMyFeedbackHandler(db)
-        result = await handler.handle(ListMyFeedbackQuery(user_id=999, tenant_id=10))
+        with patch(
+            "backend.application.handlers.feedback.list_my_feedback_handler.get_client_profile_for_user",
+            return_value=None,
+        ):
+            client_q = MagicMock()
+            client_q.filter.return_value = client_q
+            client_q.order_by.return_value = client_q
+            client_q.first.return_value = None
+            db.query.return_value = client_q
+            result = await handler.handle(ListMyFeedbackQuery(user_id=999, tenant_id=10))
         assert result == []
 
 

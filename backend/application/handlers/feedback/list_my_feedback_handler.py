@@ -2,6 +2,7 @@ from diator.requests import RequestHandler
 from sqlalchemy.orm import Session
 
 from backend.application.queries.list_my_feedback_query import ListMyFeedbackQuery
+from backend.core.client import Client
 from backend.core.client_profiles import get_client_profile_for_user
 from backend.core.feedback import Feedback
 
@@ -17,6 +18,17 @@ class ListMyFeedbackHandler(RequestHandler[ListMyFeedbackQuery, list]):
             user_id=query.user_id,
             tenant_id=query.tenant_id,
         )
+        if client is None:
+            fallback = (
+                self.db.query(Client)
+                .filter(
+                    Client.user_id == query.user_id,
+                    Client.deleted.is_(False),
+                )
+            )
+            if query.tenant_id is not None:
+                fallback = fallback.filter(Client.tenant_id == query.tenant_id)
+            client = fallback.order_by(Client.id.desc()).first()
         if client is None:
             return []
 
