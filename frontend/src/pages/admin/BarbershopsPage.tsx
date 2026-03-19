@@ -10,6 +10,27 @@ import { useToast } from '../../components/Toast';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Barbershop, Barber, Membership } from '../../types';
 
+const BILLING_PLANS = [
+  {
+    value: 'basic',
+    label: 'Basic',
+    price: '19EUR/mes',
+    description: 'Agenda, clientes e operacao base da barbearia.',
+  },
+  {
+    value: 'pro',
+    label: 'Pro',
+    price: '39EUR/mes',
+    description: 'Relatorios, fidelizacao e automacoes extra.',
+  },
+  {
+    value: 'premium',
+    label: 'Premium',
+    price: '79EUR/mes',
+    description: 'Tudo ligado com margem para equipas e crescimento.',
+  },
+] as const;
+
 const apiBaseUrl = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
 
 function buildBookingShareData(shop: Barbershop) {
@@ -35,6 +56,8 @@ export default function BarbershopsPage() {
   const { toast } = useToast();
   const { selectTenant, tenantId } = useAuth();
   const [shareShop, setShareShop] = useState<Barbershop | null>(null);
+  const [billingShop, setBillingShop] = useState<Barbershop | null>(null);
+  const [billingLoading, setBillingLoading] = useState(false);
 
   /* Memberships modal */
   const [membershipsShop, setMembershipsShop] = useState<Barbershop | null>(null);
@@ -150,6 +173,66 @@ export default function BarbershopsPage() {
     }
   }
 
+  function planLabel(plan?: string) {
+    const labels: Record<string, string> = {
+      free: 'Free',
+      basic: 'Basic',
+      pro: 'Pro',
+      premium: 'Premium',
+    };
+    return labels[plan ?? 'free'] ?? (plan ?? 'Free');
+  }
+
+  function subscriptionBadge(shop: Barbershop) {
+    const status = shop.subscription_status ?? 'inactive';
+    const styles: Record<string, string> = {
+      active: 'bg-emerald-100 text-emerald-700',
+      trialing: 'bg-sky-100 text-sky-700',
+      past_due: 'bg-amber-100 text-amber-700',
+      canceled: 'bg-red-100 text-red-700',
+      inactive: 'bg-slate-100 text-slate-600',
+    };
+    return (
+      <span className={`rounded-full px-2 py-1 text-xs font-medium ${styles[status] ?? 'bg-slate-100 text-slate-600'}`}>
+        {status}
+      </span>
+    );
+  }
+
+  async function startSubscriptionCheckout(shop: Barbershop, plan: string) {
+    try {
+      setBillingLoading(true);
+      const res = await api.post(`/billing/barbershops/${shop.id}/checkout`, { plan });
+      const checkoutUrl = res.data?.checkout_url;
+      if (!checkoutUrl) {
+        toast('Nao foi possivel iniciar o checkout.', 'error');
+        return;
+      }
+      window.location.href = checkoutUrl;
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao iniciar subscricao'), 'error');
+    } finally {
+      setBillingLoading(false);
+    }
+  }
+
+  async function openBillingPortal(shop: Barbershop) {
+    try {
+      setBillingLoading(true);
+      const res = await api.post(`/billing/barbershops/${shop.id}/portal`);
+      const portalUrl = res.data?.portal_url;
+      if (!portalUrl) {
+        toast('Nao foi possivel abrir o portal de faturacao.', 'error');
+        return;
+      }
+      window.open(portalUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao abrir portal de faturacao'), 'error');
+    } finally {
+      setBillingLoading(false);
+    }
+  }
+
   if (loading) return <Spinner />;
 
   const shareData = shareShop ? buildBookingShareData(shareShop) : null;
@@ -170,6 +253,16 @@ export default function BarbershopsPage() {
             render: (s) => <span className="font-mono text-xs">{s.tenant_id}</span>,
           },
           {
+            key: 'plan',
+            header: 'Plano',
+            render: (s) => (
+              <div className="space-y-1">
+                <div className="text-sm font-medium text-slate-700">{planLabel(s.billing_plan)}</div>
+                {subscriptionBadge(s)}
+              </div>
+            ),
+          },
+          {
             key: 'actions',
             header: 'Acoes',
             render: (s) => (
@@ -186,6 +279,9 @@ export default function BarbershopsPage() {
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setShareShop(s)}>
                   Partilha
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setBillingShop(s)}>
+                  Plano
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => openEdit(s)}>
                   Editar
@@ -324,6 +420,64 @@ export default function BarbershopsPage() {
                 value={shareData.widgetSnippet}
                 className="min-h-[88px] w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-700"
               />
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={!!billingShop}
+        onClose={() => setBillingShop(null)}
+        title={`Plano da App — ${billingShop?.nome ?? ''}`}
+      >
+        {billingShop && (
+          <div className="space-y-5">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-medium text-slate-900">Plano atual</p>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-lg font-semibold text-slate-900">{planLabel(billingShop.billing_plan)}</p>
+                  <p className="text-sm text-slate-500">Estado: {billingShop.subscription_status ?? 'inactive'}</p>
+                </div>
+                {subscriptionBadge(billingShop)}
+              </div>
+              {billingShop.stripe_customer_id && (
+                <div className="mt-4">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => openBillingPortal(billingShop)}
+                    disabled={billingLoading}
+                  >
+                    Gerir faturacao
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="grid gap-3">
+              {BILLING_PLANS.map((plan) => (
+                <div key={plan.value} className="rounded-xl border border-slate-200 bg-white p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-base font-semibold text-slate-900">{plan.label}</p>
+                      <p className="text-sm text-slate-500">{plan.description}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-emerald-700">{plan.price}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      size="sm"
+                      onClick={() => startSubscriptionCheckout(billingShop, plan.value)}
+                      disabled={billingLoading}
+                    >
+                      {billingLoading ? 'A abrir checkout...' : `Escolher ${plan.label}`}
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

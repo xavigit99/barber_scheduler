@@ -9,12 +9,13 @@ import Spinner from '../../components/Spinner';
 import { useToast } from '../../components/Toast';
 
 interface AppointmentWithPayment {
-  id: string;
-  client_id: string;
-  barber_id: string;
-  service_id: string;
+  id: string | number;
+  client_id: string | number;
+  barber_id: string | number;
+  service_id: string | number;
   start_at: string;
   payment_status: string;
+  payment_method?: string | null;
 }
 
 const PAYMENT_STATUSES = [
@@ -25,6 +26,14 @@ const PAYMENT_STATUSES = [
   { value: 'refunded', label: 'Reembolsado' },
 ];
 
+const PAYMENT_METHODS = [
+  { value: 'cash', label: 'Dinheiro' },
+  { value: 'mbway', label: 'MB Way' },
+  { value: 'multibanco', label: 'Multibanco' },
+  { value: 'card_terminal', label: 'Terminal' },
+  { value: 'bank_transfer', label: 'Transferencia' },
+];
+
 export default function PaymentsPage() {
   const { tenantId } = useAuth();
   const { toast } = useToast();
@@ -32,8 +41,10 @@ export default function PaymentsPage() {
   const [appointments, setAppointments] = useState<AppointmentWithPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
-  const [checkoutUrl, setCheckoutUrl] = useState('');
-  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [editing, setEditing] = useState<AppointmentWithPayment | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState('pending');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [saving, setSaving] = useState(false);
 
   async function load() {
     try {
@@ -50,20 +61,28 @@ export default function PaymentsPage() {
     load();
   }, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handleGenerateLink(appointmentId: string) {
-    try {
-      const res = await api.post('/payments/checkout', { appointment_id: appointmentId });
-      setCheckoutUrl(res.data.checkout_url ?? res.data.url ?? '');
-      setLinkModalOpen(true);
-    } catch (err) {
-      toast(getApiError(err, 'Erro ao gerar link de pagamento'), 'error');
-    }
+  function openPaymentModal(appointment: AppointmentWithPayment) {
+    setEditing(appointment);
+    setPaymentStatus(appointment.payment_status ?? 'pending');
+    setPaymentMethod(appointment.payment_method ?? 'cash');
   }
 
-  function copyToClipboard() {
-    navigator.clipboard.writeText(checkoutUrl).then(() => {
-      toast('Link copiado', 'success');
-    });
+  async function handleSavePayment() {
+    if (!editing) return;
+    try {
+      setSaving(true);
+      await api.patch(`/payments/appointments/${editing.id}`, {
+        payment_status: paymentStatus,
+        payment_method: paymentStatus === 'not_required' ? null : paymentMethod,
+      });
+      toast('Pagamento atualizado com sucesso', 'success');
+      setEditing(null);
+      await load();
+    } catch (err) {
+      toast(getApiError(err, 'Erro ao atualizar pagamento'), 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   function statusBadge(status: string) {
@@ -84,6 +103,17 @@ export default function PaymentsPage() {
         {labels[status] ?? status}
       </span>
     );
+  }
+
+  function methodLabel(method?: string | null) {
+    const labels: Record<string, string> = {
+      cash: 'Dinheiro',
+      mbway: 'MB Way',
+      multibanco: 'Multibanco',
+      card_terminal: 'Terminal',
+      bank_transfer: 'Transferencia',
+    };
+    return method ? labels[method] ?? method : '—';
   }
 
   const filtered = statusFilter
@@ -120,31 +150,62 @@ export default function PaymentsPage() {
 
       <Table
         columns={[
-          { key: 'id', header: 'ID', render: (a) => a.id.slice(0, 8) },
+          { key: 'id', header: 'ID', render: (a) => String(a.id).slice(0, 8) },
           { key: 'start', header: 'Data', render: (a) => new Date(a.start_at).toLocaleString('pt-PT') },
+          { key: 'method', header: 'Metodo', render: (a) => methodLabel(a.payment_method) },
           { key: 'status', header: 'Estado Pagamento', render: (a) => statusBadge(a.payment_status ?? 'not_required') },
           {
             key: 'actions',
             header: 'Acoes',
-            render: (a) =>
-              (a.payment_status === 'pending') ? (
-                <Button size="sm" onClick={() => handleGenerateLink(a.id)}>Gerar Link</Button>
-              ) : null,
+            render: (a) => (
+              <Button size="sm" onClick={() => openPaymentModal(a)}>Atualizar</Button>
+            ),
           },
         ]}
         data={filtered}
-        keyExtractor={(a) => a.id}
+        keyExtractor={(a) => String(a.id)}
         emptyMessage="Nenhum agendamento encontrado."
       />
 
-      <Modal open={linkModalOpen} onClose={() => setLinkModalOpen(false)} title="Link de Pagamento">
+      <Modal open={Boolean(editing)} onClose={() => setEditing(null)} title="Atualizar Pagamento">
         <div className="space-y-4">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <p className="break-all text-sm font-mono text-slate-700">{checkoutUrl}</p>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Estado</label>
+            <select
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800"
+              value={paymentStatus}
+              onChange={(e) => setPaymentStatus(e.target.value)}
+            >
+              {PAYMENT_STATUSES.filter((status) => status.value).map((status) => (
+                <option key={status.value} value={status.value}>{status.label}</option>
+              ))}
+            </select>
           </div>
+
+          {paymentStatus !== 'not_required' && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Metodo</label>
+              <select
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800"
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              >
+                {PAYMENT_METHODS.map((method) => (
+                  <option key={method.value} value={method.value}>{method.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+            Regista pagamentos locais da barbearia como dinheiro, MB Way, multibanco, terminal ou transferencia.
+          </div>
+
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setLinkModalOpen(false)}>Fechar</Button>
-            <Button onClick={copyToClipboard}>Copiar Link</Button>
+            <Button variant="secondary" onClick={() => setEditing(null)} disabled={saving}>Fechar</Button>
+            <Button onClick={handleSavePayment} disabled={saving}>
+              {saving ? 'A guardar...' : 'Guardar'}
+            </Button>
           </div>
         </div>
       </Modal>

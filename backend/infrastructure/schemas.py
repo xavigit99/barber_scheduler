@@ -46,6 +46,10 @@ class BarbershopResponse(BarbershopBase):
     id: int
     owner_user_id: int
     tenant_id: int
+    billing_plan: str = "free"
+    subscription_status: str = "inactive"
+    stripe_customer_id: str | None = None
+    stripe_subscription_id: str | None = None
 
     class Config:
         from_attributes = True
@@ -147,6 +151,8 @@ class AppointmentResponse(BaseModel):
     status: str = "pending"
     confirmed_at: datetime | None = None
     group_id: str | None = None
+    payment_status: str = "not_required"
+    payment_method: str | None = None
 
 
 class ClientBase(BaseModel):
@@ -510,11 +516,34 @@ class CheckoutResponse(BaseModel):
     checkout_url: str
 
 
+PaymentStatus = Literal["not_required", "pending", "paid", "refunded"]
+PaymentMethod = Literal["cash", "mbway", "multibanco", "card_terminal", "bank_transfer"]
+BillingPlan = Literal["basic", "pro", "premium"]
+
+
+class AppointmentPaymentUpdateRequest(BaseModel):
+    payment_status: PaymentStatus
+    payment_method: PaymentMethod | None = None
+
+
 class AppointmentPaymentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     payment_status: str
+    payment_method: str | None = None
+
+
+class BillingCheckoutRequest(BaseModel):
+    plan: BillingPlan
+
+
+class BillingCheckoutResponse(BaseModel):
+    checkout_url: str
+
+
+class BillingPortalResponse(BaseModel):
+    portal_url: str
 
 
 # -- Invoices (F35) -----------------------------------------------------------

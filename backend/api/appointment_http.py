@@ -19,6 +19,9 @@ from backend.application.queries.list_barber_appointments_query import (
 from backend.application.queries.list_client_appointments_query import (
     ListClientAppointmentsQuery,
 )
+from backend.application.queries.list_tenant_appointments_query import (
+    ListTenantAppointmentsQuery,
+)
 from backend.infrastructure.schemas import (
     AppointmentCreateRequest,
     AppointmentRescheduleRequest,
@@ -79,6 +82,18 @@ def build_list_client_appointments_query(
         client_id=client_id,
         target_date=target_date,
         tenant_id=tenant_id,
+    )
+
+
+def build_list_tenant_appointments_query(
+    tenant_id: int,
+    barber_id: int | None = None,
+    target_date: date | None = None,
+) -> ListTenantAppointmentsQuery:
+    return ListTenantAppointmentsQuery(
+        tenant_id=tenant_id,
+        barber_id=barber_id,
+        target_date=target_date,
     )
 
 
