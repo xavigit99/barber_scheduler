@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: "sqlite:///:memory:"
+      AUTH_SECRET: "ci-only-auth-secret"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
