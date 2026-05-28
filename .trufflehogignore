@@ -1,0 +1,3 @@
+# Exclude vendored dependencies from historical secret scans.
+# Dependency fixtures can contain non-project example connection strings.
+(^|/)node_modules/
