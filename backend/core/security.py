@@ -10,7 +10,6 @@ from backend.core.exceptions import AuthenticationError
 
 AUTH_SECRET_ENV = "AUTH_SECRET"
 AUTH_TOKEN_TTL_ENV = "AUTH_TOKEN_TTL_SECONDS"
-DEFAULT_AUTH_SECRET = "development-auth-secret"
 DEFAULT_AUTH_TOKEN_TTL_SECONDS = 86_400
 PASSWORD_HASH_ITERATIONS = 100_000
 
@@ -25,7 +24,10 @@ def _b64url_decode(value: str) -> bytes:
 
 
 def get_auth_secret() -> str:
-    return os.getenv(AUTH_SECRET_ENV, DEFAULT_AUTH_SECRET)
+    secret = os.getenv(AUTH_SECRET_ENV)
+    if not secret:
+        raise RuntimeError(f"{AUTH_SECRET_ENV} environment variable is required")
+    return secret
 
 
 def get_auth_token_ttl_seconds() -> int:
